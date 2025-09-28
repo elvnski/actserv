@@ -1,8 +1,6 @@
 import os
 from celery import Celery
-import eventlet
 
-eventlet.monkey_patch()
 
 # Then, your usual Celery configuration code follows...
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'onboarding_platform.settings')

@@ -36,60 +36,21 @@ class ClientSubmissionAPIView(APIView):
     # We allow unauthenticated users (clients) to post a submission
     # permission_classes = [AllowAny]
 
-    def post(self, request, format = None):
+    def post(self, request, format=None):
 
-        # Step 1: Separate file data from regular form data
-        data = request.data.copy()
-        files = {}
-        submissionData = {}
-
-        formSlug = data.get('formSlug')
-        clientIdentifier = data.get('clientIdentifier')
-
-        # Parse incoming data
-        for key, value in data.items():
-            if key in ['formSlug', 'clientIdentifier']:
-                continue
-            elif isinstance(value, UploadedFile):
-                files[key] = value
-            else:
-                # Capture all other dynamic fields into the submissionData dictionary
-                submissionData[key] = value
-
-
-        # Prepare data structure for the DynamicSubmissionSerializer
-        serializerData = {
-            'formSlug': formSlug,
-            'clientIdentifier': clientIdentifier,
-            'submissionData': submissionData
-        }
-
-        # Step 2: Validate the non-file data using DynamicSerializer
-        serializer = DynamicSubmissionSerializer(data = serializerData)
+        serializer = DynamicSubmissionSerializer(data=request.data, context={'request': request})
 
         if serializer.is_valid():
-            # Step 3: save the submission record and dynamic data
+
             submission = serializer.save()
-
-            # Step 4: Handle File Attachments (Multiple per form)
-            for fieldName, uploadedFile in files.items():
-                FileAttachment.objects.create(
-                    submission = submission,
-                    field_name = fieldName,
-                    file = uploadedFile
-                )
-
-            # Step 5: Trigger the async notification task
-            sendAdminNotification.delay(submission.id)
-
 
             return Response(
                 {
                     'submissionId': submission.id,
                     'status': 'Submission successful. Notification Processing'
                 },
-                status = status.HTTP_201_CREATED
+                status=status.HTTP_201_CREATED
             )
 
         # Return validation errors from the serializer
-        return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

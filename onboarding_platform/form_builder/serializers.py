@@ -1,6 +1,6 @@
 from django.db import transaction
 from rest_framework import serializers
-from .models import Form, FormField, FormSubmission, SubmissionData
+from .models import Form, FormField, FormSubmission, SubmissionData, FileAttachment
 from .tasks import sendAdminNotification
 
 
@@ -75,43 +75,60 @@ class FormSerializer(serializers.ModelSerializer):
 
 
 class DynamicSubmissionSerializer(serializers.Serializer):
-    """
-    Handles inbound client data for specific a form
-    Does not map to a model: handles saving related data manually
-    """
 
-    # 1. Incoming Fields
-    # These match the keys the React Frontend sends in the POST request
-    formSlug = serializers.SlugField(write_only = True)
-    clientIdentifier = serializers.CharField(required = False, allow_blank = True)
+    formSlug = serializers.SlugField(write_only=True)
 
-    # submissionData will contain the dynamic key-value pairs of client inputs
-    submissionData = serializers.DictField(
-        child = serializers.CharField(required = False, allow_null = True)
-    )
+    submissionData = serializers.JSONField(write_only=True)
 
     def validate(self, data):
 
-        formSlug = data['formSlug']
-        submissionData = data['submissionData']
+        # 1. JSONField did the parsing for us. We now have a dictionary.
+        nestedData = data['submissionData']
 
-        # 1. Check if the form exists and is active
+        # --- 2. Flatten and Merge Data for Validation ---
+
+        # Start with the dynamic fields from the JSON string
+        flattenedData = {}
+        flattenedData.update(nestedData)
+
+        # Merge uploaded files from the request
+        fileData = self.context['request'].FILES
+        flattenedData.update(fileData)
+
+        # Store the necessary keys for the create method.
+        # Note: We can remove data['submissionData'] here, as nested_data holds the value
+        # and we don't need the key in the final output.
+        data['nested_data'] = nestedData
+        data['flattened_data'] = flattenedData
+
+        # --- 3. Pre-Validation Checks (Form Exists & Client Identifier) ---
+
+        form_slug = data['formSlug']
         try:
-            self.formInstance = Form.objects.get(slug = formSlug, is_active = True)
+            self.formInstance = Form.objects.get(slug=form_slug, is_active=True)
         except Form.DoesNotExist:
             raise serializers.ValidationError({"formSlug": "Form not found or is inactive"})
 
-        # 2. Dynamic Validation Against FormField rules
+        # The key field for the FormSubmission model must be present
+        clientIdentifierValue = flattenedData.get('clientIdentifier')
+        if not clientIdentifierValue:
+             raise serializers.ValidationError({"clientIdentifier": "This field may not be null. (Must be provided in submissionData)"})
+
+        data['clientIdentifier'] = clientIdentifierValue # Store for create()
+
+        # --- 4. Dynamic Validation Against FormField rules (Uses Flattened Data) ---
+
         formFields = self.formInstance.fields.all()
 
         for field in formFields:
-            value = submissionData.get(field.field_name)
+            # Look up value from the flattened data
+            value = flattenedData.get(field.field_name)
 
-            # --- Check 1: Required Fields  ---
+            # Check 1: Required Fields
             if field.is_required and not value and field.field_type != 'file_upload':
                 raise serializers.ValidationError({field.field_name: f"{field.label} is required"})
 
-            # --- Check 2: Basic Type Validation  ---
+            # Check 2: Basic Type Validation
             if field.field_type == 'number' and value and not str(value).isdigit():
                 raise serializers.ValidationError({field.field_name: "Must be a valid number"})
 
@@ -121,27 +138,38 @@ class DynamicSubmissionSerializer(serializers.Serializer):
     def create(self, validated_data):
 
         formInstance = self.formInstance
-        submissionData = validated_data['submissionData']
-        clientIdentifier = validated_data.get('clientIdentifier')
+
+        # Retrieve the data required for saving
+        submissionDataToSave = validated_data['nested_data']
+        clientIdentifier = validated_data['clientIdentifier']
+        fileData = self.context['request'].FILES
 
         with transaction.atomic():
+
             # 1. Create the main submission record
             submission = FormSubmission.objects.create(
-                form = formInstance,
-                client_identifier = clientIdentifier
+                form=formInstance,
+                client_identifier=clientIdentifier
             )
 
-            # 2. Storing the data
-            for field_name, value in submissionData.items():
+            # 2. Storing non-file data
+            for field_name, value in submissionDataToSave.items():
                 if value is not None and value != '':
                     SubmissionData.objects.create(
-                        submission = submission,
-                        field_name = field_name,
-                        value = str(value)
+                        submission=submission,
+                        field_name=field_name,
+                        value=str(value)
                     )
 
-            # 3. Trigger the asynchronous notification task
+            # 3. Handle File Uploads (save files here)
+            for field_name, file_object in fileData.items():
+                 FileAttachment.objects.create(
+                                submission=submission,
+                                field_name=field_name,
+                                file=file_object
+                            )
+
+            # 4. Trigger the asynchronous notification task
             sendAdminNotification.delay(submission.id)
 
             return submission
-

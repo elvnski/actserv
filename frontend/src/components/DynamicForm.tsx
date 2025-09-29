@@ -18,6 +18,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [submissionMessage, setSubmissionMessage] = useState<string | null>(null);
+    const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
 
     // =======================================================================
@@ -57,10 +58,20 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
     // 2. INPUT HANDLERS
     // =======================================================================
 
+    const clearFieldError = (name: string) => {
+        // CLEARS: Error for the specific field when the user starts typing
+        setFieldErrors((prev: FieldErrors) => {
+            const newState = { ...prev };
+            delete newState[name];
+            return newState;
+        });
+    };
+
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
 
         const {name, value} = e.target;
         setFormData(prev => ({...prev, [name]: value}));
+        clearFieldError(name); // CLEARS
     };
 
 
@@ -78,6 +89,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
                 return newState;
             });
         }
+        clearFieldError(name); // CLEARS
     };
 
 
@@ -85,6 +97,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
 
         const {name, checked} = e.target;
         setFormData(prev => ({...prev, [name]: checked}));
+        clearFieldError(name); // CLEARS
     };
 
 
@@ -98,6 +111,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
         e.preventDefault();
         setSubmissionMessage(null);
         setError(null);
+        setFieldErrors({});
 
         if (!schema) return;
 
@@ -110,16 +124,13 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
 
             const value = formData[field.field_name];
 
-            //Files appended to top level FormData
             if (field.field_type == 'file_upload' && value instanceof File) submissionData.append(field.field_name, value)
-            // Other fields go into the JSON
             else if (value !== undefined) submissionJSON[field.field_name] = value as string | number | boolean;
         }
 
         const CLIENT_ID = 'user-session-kyc-client-123';
         submissionJSON['clientIdentifier'] = CLIENT_ID;
 
-        // nested JSON appended as string
         submissionData.append('submissionData', JSON.stringify(submissionJSON));
 
         try {
@@ -131,14 +142,30 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
             });
 
             setSubmissionMessage(`Submission successful! ID: ${response.data.submissionId}. Admin notified.`);
-            console.table(response.data);
             setFormData({}); // Form cleared here
         }
         catch (err: any) {
 
             console.error("Submission error: ", err.response);
 
-            if (err.response && err.response.data) setError(`Submission failed: ${JSON.stringify(err.response.data)}`);
+            if (err.response && err.response.data) {
+                const errorData = err.response.data;
+
+                // Check for DRF validation errors (object where keys are field names)
+                if (typeof errorData === 'object' && !Array.isArray(errorData)) {
+                    setFieldErrors(errorData as FieldErrors);
+                    // Check for non-field errors (e.g., if Django returns 'non_field_errors')
+                    if (errorData.non_field_errors) {
+                        setError(`Submission failed: ${errorData.non_field_errors.join(' ')}`);
+                    } else {
+                        // Display a generic failure message alongside the field errors
+                        setError("Submission failed due to invalid input(s) below.");
+                    }
+                } else {
+                    // Fallback for unexpected error structures (e.g., 500 server error messages)
+                    setError(`An unknown error occurred during submission: ${JSON.stringify(errorData)}`);
+                }
+            }
             else setError("An unknown error occurred during submission");
         }
     };
@@ -158,7 +185,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
 
         const wrapperClass = field.field_type === 'checkbox' ? 'form-check mb-3' : 'form-group mb-3';
         const currentValue = formData[field.field_name] || '';
-
+        const fieldError = fieldErrors[field.field_name];
+        const isInvalid = !!fieldError;
 
 
         // --- Standard Inputs (Text, Number, Date, Email) ---
@@ -174,18 +202,22 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
 
                     <input
                         {...commonProps}
-                        className="form-control"
+                        className={`form-control ${isInvalid ? 'is-invalid' : ''}`} // ADDED: Conditional class
                         type={field.field_type}
                         value={currentValue as string | number}
                         onChange={handleInputChange}
                         placeholder={field.field_type !== 'date' ? field.label : undefined}
                     />
+                    {isInvalid && ( // ADDED: Error message display
+                        <div className="invalid-feedback">
+                            {fieldError.join(' ')}
+                        </div>
+                    )}
                 </div>
             );
         }
 
-
-
+        // --- Dropdown ---
         if (field.field_type === 'dropdown') {
 
             return (
@@ -198,7 +230,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
 
                     <select
                         {...commonProps}
-                        className="form-control"
+                        className={`form-control ${isInvalid ? 'is-invalid' : ''}`}
                         value={currentValue as string}
                         onChange={handleInputChange}
                     >
@@ -211,12 +243,16 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
                             </option>
                         ))}
                     </select>
+                    {isInvalid && ( // ADDED
+                        <div className="invalid-feedback">
+                            {fieldError.join(' ')}
+                        </div>
+                    )}
                 </div>
             );
         }
 
-
-
+        // --- File Upload ---
         if (field.field_type === 'file_upload') {
 
             return (
@@ -229,19 +265,23 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
 
                     <input
                         {...commonProps}
-                        className="form-control"
+                        className={`form-control ${isInvalid ? 'is-invalid' : ''}`} // ADDED
                         type="file"
                         onChange={handleFileChange}
                         value={''}
                     />
 
                     {currentValue instanceof File && <small className="form-text text-muted">File ready: {(currentValue as File).name}</small>}
+                    {isInvalid && ( // ADDED
+                        <div className="invalid-feedback">
+                            {fieldError.join(' ')}
+                        </div>
+                    )}
                 </div>
             );
         }
 
-
-
+        // --- Checkbox ---
         if (field.field_type === 'checkbox') {
 
             return (
@@ -250,7 +290,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
 
                     <input
                         {...commonProps}
-                        className="form-check-input"
+                        className={`form-check-input ${isInvalid ? 'is-invalid' : ''}`} // ADDED
                         type="checkbox"
                         checked={!!currentValue}
                         onChange={handleCheckboxChange}
@@ -259,6 +299,11 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
                     <label htmlFor={field.field_name} className="form-check-label">
                         {field.label} {field.is_required && <span className="text-danger">*</span>}
                     </label>
+                    {isInvalid && ( // ADDED: Use d-block to ensure the error message is visible
+                        <div className="invalid-feedback d-block">
+                            {fieldError.join(' ')}
+                        </div>
+                    )}
                 </div>
             );
         }
@@ -268,7 +313,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
 
 
     // =======================================================================
-    // 5. MAIN RENDER
+    // 5. MAIN RENDER (No changes needed here)
     // =======================================================================
 
     if (isLoading) return <div className="loading">Loading form...</div>;
@@ -284,7 +329,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
             <hr />
 
             {submissionMessage && <div className="alert alert-success">{submissionMessage}</div>}
-            {error && <div className="alert alert-danger">{error}</div>}
+            {error && <div className="alert alert-danger">{error}</div>} {/* This shows generic or non-field errors */}
 
             <form onSubmit={handleSubmit} noValidate>
                 {schema.fields.map(renderField)}
@@ -303,37 +348,3 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
 };
 
 export default DynamicForm;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

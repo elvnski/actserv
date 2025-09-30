@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import type {FormSchema, FormField, FormData} from '../types';
+import './DynamicForm.css';
 
 
 const DYNAMIC_SLUG_PLACEHOLDER=  'client-onboarding';
@@ -8,6 +9,8 @@ const DYNAMIC_SLUG_PLACEHOLDER=  'client-onboarding';
 interface DynamicFormProps {
     formSlug: string;
 }
+
+type FieldErrors = {[key: string]: string[]};
 
 const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
 
@@ -52,6 +55,20 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
         fetchSchema();
 
     }, [slugToUse]); //Dependency to ensure fefetching on url change
+
+    useEffect(() => {
+        // Check if there is a successful message to display
+        if (submissionMessage) {
+            // Set a timeout to clear the message after 15000 milliseconds (15 seconds)
+            const timer = setTimeout(() => {
+                setSubmissionMessage(null);
+            }, 15000); // 15 seconds
+
+            // Cleanup function: This runs if the component unmounts or if
+            // submissionMessage changes before the 15s is up.
+            return () => clearTimeout(timer);
+        }
+    }, [submissionMessage]);
 
 
     // =======================================================================
@@ -168,6 +185,17 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
             }
             else setError("An unknown error occurred during submission");
         }
+
+        return (
+            // ...
+            <div className="form-card">
+                {/* Only show the message if it's not null */}
+                {submissionMessage && <div className="alert-success">{submissionMessage}</div>}
+                {error && <div className="alert-danger">{error}</div>}
+                {/* ... */}
+            </div>
+            // ...
+        );
     };
 
 
@@ -194,24 +222,24 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
 
             return (
 
-                <div className={wrapperClass} key={field.field_name}>
+                <div className="form-group-wrapper" key={field.field_name}>
 
                     <label htmlFor={field.field_name} className="form-label">
-                        {field.label} {field.is_required && <span className="text-danger">*</span>}
+                        {field.label} {field.is_required && <span className="required-star">*</span>}
                     </label>
 
                     <input
                         {...commonProps}
-                        className={`form-control ${isInvalid ? 'is-invalid' : ''}`} // ADDED: Conditional class
+                        className={`form-input ${isInvalid ? 'is-invalid' : ''}`}
                         type={field.field_type}
                         value={currentValue as string | number}
                         onChange={handleInputChange}
                         placeholder={field.field_type !== 'date' ? field.label : undefined}
                     />
-                    {isInvalid && ( // ADDED: Error message display
-                        <div className="invalid-feedback">
+                    {isInvalid && (
+                        <p className="error-message">
                             {fieldError.join(' ')}
-                        </div>
+                        </p>
                     )}
                 </div>
             );
@@ -222,15 +250,15 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
 
             return (
 
-                <div className="form-group mb-3" key={field.field_name}>
+                <div className="form-group-wrapper" key={field.field_name}>
 
                     <label htmlFor={field.field_name} className="form-label">
-                        {field.label} {field.is_required && <span className="text-danger">*</span>}
+                        {field.label} {field.is_required && <span className="required-star">*</span>}
                     </label>
 
                     <select
                         {...commonProps}
-                        className={`form-control ${isInvalid ? 'is-invalid' : ''}`}
+                        className={`form-select ${isInvalid ? 'is-invalid' : ''}`}
                         value={currentValue as string}
                         onChange={handleInputChange}
                     >
@@ -243,10 +271,10 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
                             </option>
                         ))}
                     </select>
-                    {isInvalid && ( // ADDED
-                        <div className="invalid-feedback">
+                    {isInvalid && (
+                        <p className="error-message">
                             {fieldError.join(' ')}
-                        </div>
+                        </p>
                     )}
                 </div>
             );
@@ -254,28 +282,39 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
 
         // --- File Upload ---
         if (field.field_type === 'file_upload') {
+            const fileName = currentValue instanceof File ? currentValue.name : 'No file chosen';
 
             return (
 
-                <div className="form-group mb-3" key={field.field_name}>
+                <div className="form-group-wrapper" key={field.field_name}>
 
                     <label htmlFor={field.field_name} className="form-label">
-                        {field.label} {field.is_required && <span className="text-danger">*</span>}
+                        {field.label} {field.is_required && <span className="required-star">*</span>}
                     </label>
 
-                    <input
-                        {...commonProps}
-                        className={`form-control ${isInvalid ? 'is-invalid' : ''}`} // ADDED
-                        type="file"
-                        onChange={handleFileChange}
-                        value={''}
-                    />
+                    <div className="custom-file-input-wrapper"> {/* NEW WRAPPER */}
+                        <input
+                            {...commonProps}
+                            // The actual file input is now hidden, we just use its button part
+                            className={`form-input-file ${isInvalid ? 'is-invalid' : ''}`}
+                            type="file"
+                            onChange={handleFileChange}
+                            value={''}
+                        />
 
-                    {currentValue instanceof File && <small className="form-text text-muted">File ready: {(currentValue as File).name}</small>}
-                    {isInvalid && ( // ADDED
-                        <div className="invalid-feedback">
+                        {/* Visual display element */}
+                        <span className="file-input-display">
+                    {fileName}
+                </span>
+
+                    </div>
+
+                    {/* Remove the original small text element if you want the name INSIDE the box */}
+                    {/* {currentValue instanceof File && <small className="form-text-muted">File ready: {(currentValue as File).name}</small>} */}
+                    {isInvalid && (
+                        <p className="error-message">
                             {fieldError.join(' ')}
-                        </div>
+                        </p>
                     )}
                 </div>
             );
@@ -286,28 +325,27 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
 
             return (
 
-                <div className="form-check mb-3" key={field.field_name}>
+                <div className="form-checkbox-wrapper" key={field.field_name}>
 
                     <input
                         {...commonProps}
-                        className={`form-check-input ${isInvalid ? 'is-invalid' : ''}`} // ADDED
+                        className={`form-checkbox ${isInvalid ? 'is-invalid' : ''}`}
                         type="checkbox"
                         checked={!!currentValue}
                         onChange={handleCheckboxChange}
                     />
 
-                    <label htmlFor={field.field_name} className="form-check-label">
-                        {field.label} {field.is_required && <span className="text-danger">*</span>}
+                    <label htmlFor={field.field_name} className="form-label form-checkbox-label">
+                        {field.label} {field.is_required && <span className="required-star">*</span>}
                     </label>
-                    {isInvalid && ( // ADDED: Use d-block to ensure the error message is visible
-                        <div className="invalid-feedback d-block">
+                    {isInvalid && (
+                        <p className="error-message form-checkbox-error">
                             {fieldError.join(' ')}
-                        </div>
+                        </p>
                     )}
                 </div>
             );
         }
-
         return null;
     };
 
@@ -324,7 +362,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
 
         <div className="dynamic-form container mt-5">
 
-            <h1>{schema.name}</h1>
+            <h1 style={{ color: '#1a1414' }}>{schema.name}</h1>
             <p>{schema.description}</p>
             <hr />
 

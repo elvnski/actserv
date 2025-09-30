@@ -1,0 +1,246 @@
+
+
+
+
+body {
+
+    background-color: #f7f8fa;
+}
+
+.dynamic-form-wrapper {
+
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 40px 20px;
+
+    margin-bottom: 8px;
+}
+
+.form-card {
+
+    max-width: 800px;
+    width: 100%;
+
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    padding: 40px;
+
+    color: #1f2937;
+    margin-bottom: 24px;
+}
+
+
+
+.form-card h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 8px;
+}
+
+.form-card p {
+    color: #6b7280;
+    margin-bottom: 24px;
+}
+
+.form-card hr {
+    border: none;
+    border-top: 1px solid #e5e7eb;
+    margin-bottom: 32px;
+}
+
+
+
+.form-group-wrapper {
+    margin-bottom: 24px;
+}
+
+.form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 4px;
+    text-align: left;
+}
+
+.required-star {
+    color: #dc2626;
+}
+
+.form-input,
+.form-select {
+    display: block;
+    width: 100%;
+    padding: 10px 12px;
+    margin-top: 4px;
+    border-radius: 6px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    font-size: 1rem;
+
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+
+    background-color: #ffffff;
+    color: #1f2937;
+    border: 1px solid #1f2937;
+}
+
+
+.form-input::placeholder,
+.form-select::placeholder {
+    color: #9ca3af;
+    opacity: 1;
+}
+
+.form-input:focus,
+.form-select:focus {
+    border-color: #4f46e5;
+    outline: none;
+}
+
+
+
+.form-input.is-invalid,
+.form-select.is-invalid {
+    border-color: #ef4444;
+}
+
+.error-message {
+    margin-top: 8px;
+    font-size: 0.875rem;
+    color: #dc2626;
+}
+
+
+
+.form-checkbox-wrapper {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 24px;
+}
+
+.form-checkbox {
+    height: 16px;
+    width: 16px;
+    margin-right: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 3px;
+
+    accent-color: #4f46e5;
+}
+
+
+
+.submit-button {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 10px 20px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    font-size: 1rem;
+    font-weight: 500;
+    color: #ffffff;
+    background-color: #4f46e5;
+    transition: background-color 0.15s ease-in-out;
+    cursor: pointer;
+    margin-top: 50px;
+}
+
+.submit-button:hover {
+    background-color: #4338ca;
+}
+
+.submit-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+
+
+.alert-success {
+    padding: 16px;
+    margin-bottom: 16px;
+    border-radius: 8px;
+    color: #065f46;
+    background-color: #d1fae5;
+    border: 1px solid #a7f3d0;
+}
+
+.alert-danger {
+    padding: 16px;
+    margin-bottom: 16px;
+    border-radius: 8px;
+    color: #991b1b;
+    background-color: #fee2e2;
+    border: 1px solid #fca5a5;
+}
+
+
+/* --- Custom File Input Styling --- */
+
+.custom-file-input-wrapper {
+    /* Style wrapper to look like a form input box */
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin-top: 4px;
+
+    /* Inherit input styling (or copy it here for borders) */
+    border: 1px solid #1f2937;
+    border-radius: 6px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    background-color: #ffffff;
+
+    /* Ensure padding matches standard input for height */
+    padding: 0;
+    overflow: hidden;
+}
+
+.form-input-file {
+    /* This style makes the input look like the button is the only visible part */
+    position: relative;
+    /* This makes the file input only take up the space of the button */
+    padding: 10px 12px;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.form-input-file::-webkit-file-upload-button {
+    /* Hides the default Chrome/Safari button and allows styling */
+    visibility: hidden;
+    width: 0;
+}
+
+.form-input-file::before {
+    /* Creates the visible "Choose File" button */
+    content: 'Choose File';
+    display: inline-block;
+    background-color: #1f2937; /* Black button */
+    color: #ffffff;
+    border-radius: 4px;
+    padding: 10px 12px;
+    outline: none;
+    white-space: nowrap;
+    cursor: pointer;
+    font-weight: 500;
+    margin: -10px -12px; /* Pulls the button into position */
+    transition: background-color 0.15s;
+}
+
+.form-input-file:hover::before {
+    background-color: #374151; /* Slight hover effect */
+}
+
+.file-input-display {
+    /* This is the area where the filename is displayed */
+    flex-grow: 1;
+    padding: 0 12px;
+    color: #374151; /* Dark gray for filename */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Ensures long names look good */
+}

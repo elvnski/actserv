@@ -248,6 +248,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
         // --- Dropdown ---
         if (field.field_type === 'dropdown') {
 
+            const options = field.configuration?.options || [];
+
             return (
 
                 <div className="form-group-wrapper" key={field.field_name}>
@@ -265,7 +267,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
 
                         <option value="">Select {field.label}</option>
 
-                        {field.options && field.options.map(option => (
+                        {options.map((option: { value: string; label: string }) => (
                             <option key={option.value} value={option.value}>
                                 {option.label}
                             </option>

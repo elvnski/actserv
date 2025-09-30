@@ -6,11 +6,18 @@ export interface FormField {
     field_name: string;
     label: string;
     is_required: boolean;
-    // Added for dropdowns and checkboxes
-    options?: {
-        value: string;
-        label: string
-    }[];
+    order: number; // Added 'order' since it's in the payload
+
+    configuration: {
+        // This structure is now used specifically for 'dropdown' options
+        options?: {
+            value: string;
+            label: string
+        }[];
+        // Other potential settings (min/max for number, file extensions, etc.)
+        // would also go here.
+        [key: string]: any; // Allows for flexibility with other config data
+    };
 }
 
 /** Form schema response structure*/

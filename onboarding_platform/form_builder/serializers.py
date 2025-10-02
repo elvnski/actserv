@@ -7,7 +7,9 @@ from .tasks import sendAdminNotification
 # Serializer for FormField (used nested within Form for admin setup)
 class FormFieldSerializer(serializers.ModelSerializer):
 
-    id = serializers.IntegerField(required=False, read_only=False)
+    id = serializers.IntegerField(required=False, allow_null=True)
+
+    configuration = serializers.JSONField(required=False, allow_null=True)
 
     class Meta:
         model = FormField
@@ -19,9 +21,11 @@ class FormSerializer(serializers.ModelSerializer):
     # Nested serializer to handle fields creation/update directly via the Form endpoint
     fields = FormFieldSerializer(many = True, required = False)
 
+    description = serializers.CharField(required=False, allow_blank=True)
+
     class Meta:
         model = Form
-        fields = ['id', 'name', 'slug', 'is_active', 'fields']
+        fields = ['id', 'name', 'slug', 'description', 'is_active', 'fields']
 
     # Override create/update to handle nested FormField creation/update
     def create(self, validated_data):
@@ -33,6 +37,7 @@ class FormSerializer(serializers.ModelSerializer):
 
         return form
 
+    @transaction.atomic
     def update(self, instance, validated_data):
         fields_data = validated_data.pop('fields', [])
 
@@ -40,16 +45,20 @@ class FormSerializer(serializers.ModelSerializer):
         instance.name = validated_data.get('name', instance.name)
         instance.slug = validated_data.get('slug', instance.slug)
         instance.is_active = validated_data.get('is_active', instance.is_active)
+        instance.description = validated_data.get('description', instance.description)
         instance.save()
 
         # 2. Handle nested FormField updates
-        existing_field_ids = [field.id for field in instance.fields.all()]
-        fields_to_keep = []
+        existing_field_ids = set(instance.fields.values_list('id', flat=True))
+        fields_to_keep = set()
 
         for field_data in fields_data:
+
             field_id = field_data.get('id', None)
 
-            if field_id:
+            if isinstance(field_id, int) and field_id in existing_field_ids:
+
+                # UPDATE existing field
                 field = FormField.objects.get(id = field_id, form = instance)
 
                 # UPDATE existing field
@@ -62,14 +71,23 @@ class FormSerializer(serializers.ModelSerializer):
 
                 field.save()
 
-                fields_to_keep.append(field.id)
+                fields_to_keep.add(field.id)
             else:
+
+                # Remove the temporary frontend ID (which is not an integer)
+                field_data.pop('id', None)
+
                 # CREATE new field
                 new_field = FormField.objects.create(form=instance, **field_data)
-                fields_to_keep.append(new_field.id)
+                fields_to_keep.add(new_field.id)
 
-        # 3. DELETE fields removed by the admin (the flexibility requirement)
-        FormField.objects.filter(form = instance).exclude(id__in=fields_to_keep).delete()
+
+        # 3. DELETE fields removed by the admin
+
+        # Find all field IDs that exist in the DB but were NOT submitted by the frontend
+        fields_to_delete = existing_field_ids - fields_to_keep
+
+        FormField.objects.filter(form=instance, id__in=fields_to_delete).delete()
 
         return instance
 

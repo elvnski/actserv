@@ -118,6 +118,57 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
     };
 
 
+    const validateForm = (data: FormData): boolean => {
+        // We use FieldErrors type: {[key: string]: string[]}
+        const errors: FieldErrors = {};
+        let isValid = true;
+
+        if (!schema) return true;
+
+        for (const field of schema.fields) {
+            const fieldName = field.field_name;
+            const value = data[fieldName];
+
+            // 1. Check: Required Fields
+            if (field.is_required) {
+
+                // File Uploads: Check if the file object exists
+                if (field.field_type === 'file_upload') {
+                    if (!value) {
+                        errors[fieldName] = [`${field.label} is required.`];
+                        isValid = false;
+                    }
+                }
+                // All other types (text, number, date, dropdown, checkbox)
+                else if (value === null || value === undefined || value === '' || (field.field_type === 'checkbox' && value !== true)) {
+                    errors[fieldName] = [`${field.label} is required.`];
+                    isValid = false;
+                }
+            }
+
+            // 2. Check: Type-Specific Validation (Number)
+            // Only run this check if the field is not empty (and required check passed)
+            if (field.field_type === 'number' && value !== '' && value !== null && value !== undefined) {
+
+                // Attempt to convert to number. If it fails (NaN), it's invalid.
+                if (isNaN(Number(value))) {
+                    // Only add error if no required error was already set for this field
+                    if (!errors[fieldName]) {
+                        errors[fieldName] = [];
+                    }
+                    errors[fieldName].push(`Must be a valid number.`);
+                    isValid = false;
+                }
+            }
+
+            // NOTE: You can add other checks here (e.g., email format, min/max length)
+        }
+
+        // Update the state with the errors found
+        setFieldErrors(errors);
+
+        return isValid;
+    };
 
     // =======================================================================
     // 3. SUBMISSION LOGIC
@@ -131,6 +182,14 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
         setFieldErrors({});
 
         if (!schema) return;
+
+        // --- START: PRE-FLIGHT VALIDATION CHECK ---
+        // Assuming validateForm(formData) is defined elsewhere and sets the field errors state
+        if (!validateForm(formData)) {
+            setError("Please correct the validation errors below before submitting.");
+            return;
+        }
+        // --- END: PRE-FLIGHT VALIDATION CHECK ---
 
         const submissionData = new FormData();
         submissionData.append('formSlug', slugToUse);
@@ -160,6 +219,10 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
 
             setSubmissionMessage(`Submission successful! ID: ${response.data.submissionId}. Admin notified.`);
             setFormData({}); // Form cleared here
+            // Clear field errors on success
+            setFieldErrors({});
+            setError(null);
+
         }
         catch (err: any) {
 
@@ -186,6 +249,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
             else setError("An unknown error occurred during submission");
         }
 
+        // The return statement is for the component's render function, not the handler itself,
+        // but preserving the structure you provided.
         return (
             // ...
             <div className="form-card">
@@ -197,7 +262,6 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
             // ...
         );
     };
-
 
     // =======================================================================
     // 4. RENDERING LOGIC

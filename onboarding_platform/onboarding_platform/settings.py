@@ -40,10 +40,12 @@ INSTALLED_APPS = [
     'rest_framework',
     'form_builder',
     'django_celery_results',
+    'corsheaders',
 ]
 
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -54,6 +56,11 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'onboarding_platform.urls'
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
 
 TEMPLATES = [
     {
@@ -72,6 +79,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'onboarding_platform.wsgi.application'
 
+# APPEND_SLASH = False
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases

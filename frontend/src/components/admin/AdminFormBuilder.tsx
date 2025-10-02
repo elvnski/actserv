@@ -1,0 +1,366 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useParams, useNavigate } from 'react-router-dom';
+import type { FormSchema, FormField, FormFieldConfiguration } from '../../types.ts';
+import './admin.css';
+
+const ADMIN_API_URL = 'http://127.0.0.1:8000/api/admin/forms/';
+
+// Helper to create a new field with a unique temporary ID
+const createNewField = (order: number): FormField => ({
+    id: Math.random(), // Temporary client-side ID
+    field_name: '',
+    field_type: 'text',
+    label: '',
+    is_required: false,
+    order: order,
+    configuration: {},
+});
+
+const AdminFormBuilder = () => {
+    // router hooks
+    const { formId } = useParams<{ formId?: string }>();
+    const navigate = useNavigate();
+
+    // state
+    const [formName, setFormName] = useState('');
+    const [formSlug, setFormSlug] = useState('');
+    const [formDescription, setFormDescription] = useState('');
+    const [fields, setFields] = useState<FormField[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [isEditMode, setIsEditMode] = useState(!!formId);
+
+    // --- 2. Fetch Form Data for Editing ---
+    useEffect(() => {
+        if (formId) {
+            setIsLoading(true);
+            axios.get<FormSchema>(`${ADMIN_API_URL}${formId}/`)
+                .then(response => {
+                    setFormName(response.data.name);
+                    setFormSlug(response.data.slug);
+                    setFormDescription(response.data.description || '');
+                    // Ensure field IDs are numbers (for local state keys/mapping)
+                    const loadedFields = response.data.fields.map(field => ({
+                        ...field,
+                        id: field.id || Math.random(),
+                        configuration: field.configuration || {}
+                    }));
+                    setFields(loadedFields);
+                })
+                .catch(err => {
+                    console.error("Failed to fetch form:", err);
+                    setError("Failed to load form for editing. Check API connection.");
+                })
+                .finally(() => setIsLoading(false));
+        }
+    }, [formId]);
+
+
+    // --- 3. Handlers ---
+
+    // Handle updates to the form's meta-data (name, slug, description)
+    const handleFormMetaChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        if (name === 'name') setFormName(value);
+        if (name === 'slug') setFormSlug(value);
+        if (name === 'description') setFormDescription(value);
+    };
+
+    // Handle updates to individual field properties (label, type, required)
+    const handleFieldChange = (index: number, name: keyof FormField, value: any) => {
+        setFields(prevFields => prevFields.map((field, i) => {
+            if (i === index) {
+                // If the type changes, reset configuration
+                if (name === 'field_type') {
+                    return { ...field, [name]: value, configuration: {} };
+                }
+                return { ...field, [name]: value };
+            }
+            return field;
+        }));
+    };
+
+    // Handle updates to field configuration (e.g., dropdown options)
+    const handleConfigurationChange = (index: number, config: FormFieldConfiguration) => {
+        setFields(prevFields => prevFields.map((field, i) => {
+            if (i === index) {
+                return { ...field, configuration: config };
+            }
+            return field;
+        }));
+    };
+
+    // Add a new field
+    const handleAddField = () => {
+        const newOrder = fields.length ? fields[fields.length - 1].order + 1 : 1;
+        setFields([...fields, createNewField(newOrder)]);
+    };
+
+    // Remove a field
+    const handleRemoveField = (index: number) => {
+        setFields(prevFields => prevFields.filter((_, i) => i !== index));
+    };
+
+    // Move a field up/down
+    const handleMoveField = (index: number, direction: 'up' | 'down') => {
+        setFields(prevFields => {
+            const newFields = [...prevFields];
+            const newIndex = direction === 'up' ? index - 1 : index + 1;
+
+            if (newIndex >= 0 && newIndex < newFields.length) {
+                // Swap the fields
+                [newFields[index], newFields[newIndex]] = [newFields[newIndex], newFields[index]];
+
+                // Re-sort the order property after swapping
+                newFields.forEach((field, i) => field.order = i + 1);
+            }
+            return newFields;
+        });
+    };
+
+    // --- 4. Submission Handler ---
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setError(null);
+
+        // Validation (basic checks)
+        if (!formName || !formSlug || fields.length === 0) {
+            setError("Name, Slug, and at least one field are required.");
+            setIsLoading(false);
+            return;
+        }
+
+        const data: Omit<FormSchema, 'id'> = {
+            name: formName,
+            slug: formSlug,
+            description: formDescription,
+            is_active: true, // Always set active upon creation/update
+            fields: fields.map((field) => {
+                const isNewField = typeof field.id === 'number' && field.id < 1;
+
+                // If it's a new field, set the ID to null (as previously decided)
+                if (isNewField) {
+                    return { ...field, id: null };
+                }
+
+                // If it's an existing field, return it as is (including its configuration object)
+                return field;
+
+            }) as FormField[],
+        };
+
+        try {
+            if (isEditMode && formId) {
+                // PUT request for editing
+                await axios.put(`${ADMIN_API_URL}${formId}/`, data);
+
+                alert(`Form '${formName}' updated successfully!`);
+                navigate('/admin/forms');
+
+            } else {
+                // POST request for creation
+                const response = await axios.post(ADMIN_API_URL, data);
+                alert(`Form '${formName}' created successfully!`);
+
+                navigate('/admin/forms');
+            }
+        } catch (err: any) {
+            console.error("Submission error:", err.response?.data || err);
+            setError(`Failed to save form: ${err.response?.data?.slug || err.message}`);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+
+    // --- 5. Field Renderer (Dropdown Options Editor) ---
+    const renderConfigEditor = (field: FormField, index: number) => {
+        if (field.field_type === 'dropdown') {
+            const options = (field.configuration?.options || []) as { value: string; label: string }[];
+
+            const handleOptionChange = (optIndex: number, key: 'label' | 'value', value: string) => {
+                const newOptions = options.map((opt, i) => {
+                    if (i === optIndex) return { ...opt, [key]: value };
+                    return opt;
+                });
+                handleConfigurationChange(index, { options: newOptions });
+            };
+
+            const handleAddOption = () => {
+                const newOptions = [...options, { label: '', value: '' }];
+                handleConfigurationChange(index, { options: newOptions });
+            };
+
+            const handleRemoveOption = (optIndex: number) => {
+                const newOptions = options.filter((_, i) => i !== optIndex);
+                handleConfigurationChange(index, { options: newOptions });
+            };
+
+            return (
+                <div className="field-config-editor">
+                    <h5 className="config-title">Dropdown Options:</h5>
+                    {options.map((option, optIndex) => (
+                        <div key={optIndex} className="config-option-row">
+                            <input
+                                type="text"
+                                value={option.label}
+                                onChange={(e) => handleOptionChange(optIndex, 'label', e.target.value)}
+                                placeholder="Label (e.g., Yes)"
+                                className="form-input config-input"
+                            />
+                            <input
+                                type="text"
+                                value={option.value}
+                                onChange={(e) => handleOptionChange(optIndex, 'value', e.target.value)}
+                                placeholder="Value (e.g., Y)"
+                                className="form-input config-input"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => handleRemoveOption(optIndex)}
+                                className="btn-danger btn-remove-option"
+                            >
+                                X
+                            </button>
+                        </div>
+                    ))}
+                    <button type="button" onClick={handleAddOption} className="btn-secondary">
+                        + Add Option
+                    </button>
+                </div>
+            );
+        }
+        return null;
+    };
+
+
+    // --- 6. Main Render ---
+    return (
+        // 2. Apply admin-container
+        <form onSubmit={handleSubmit} className="admin-container">
+            <header className="admin-header">
+                <h1 className="admin-title">
+                    {isEditMode ? `Edit Form: ${formName}` : 'Create New Form Template'}
+                </h1>
+                <button
+                    type="submit"
+                    className="btn-primary"
+                    disabled={isLoading}
+                >
+                    {isLoading ? 'Saving...' : 'Save Form Template'}
+                </button>
+            </header>
+
+            {error && <div className="alert-danger" style={{ marginBottom: '20px', padding: '10px' }}>{error}</div>}
+
+            <div className="form-meta-group">
+                <div className="form-group-builder">
+                    <label className="form-label">Name:</label>
+                    <input
+                        type="text"
+                        name="name"
+                        value={formName}
+                        onChange={handleFormMetaChange}
+                        className="form-input"
+                        required
+                    />
+                </div>
+                <div className="form-group-builder">
+                    <label className="form-label">Slug (Client URL):</label>
+                    <input
+                        type="text"
+                        name="slug"
+                        value={formSlug}
+                        onChange={handleFormMetaChange}
+                        className="form-input"
+                        required
+                    />
+                </div>
+                <div className="form-group-builder">
+                    <label className="form-label">Description (Optional):</label>
+                    <textarea
+                        name="description"
+                        value={formDescription}
+                        onChange={handleFormMetaChange}
+                        className="form-input"
+                        rows={3}
+                    />
+                </div>
+            </div>
+
+            {/* --- Field Builder Section --- */}
+            <h2 className="section-title">Form Fields</h2>
+
+            <div className="field-list-wrapper">
+                {fields.map((field, index) => (
+                    <div key={field.id} className="field-card">
+                        {/* Field Header/Actions */}
+                        <div className="field-header">
+                            <h3 className="field-title">{field.label || `Field ${index + 1}`}</h3>
+                            <div className="field-actions">
+                                <button type="button" onClick={() => handleMoveField(index, 'up')} disabled={index === 0} className="btn-move">↑</button>
+                                <button type="button" onClick={() => handleMoveField(index, 'down')} disabled={index === fields.length - 1} className="btn-move">↓</button>
+                                <button type="button" onClick={() => handleRemoveField(index)} className="btn-danger btn-sm">Remove</button>
+                            </div>
+                        </div>
+
+                        {/* Field Properties */}
+                        <div className="field-properties-row">
+                            <div className="form-group-builder property-group">
+                                <label className="form-label">Label:</label>
+                                <input
+                                    type="text"
+                                    value={field.label}
+                                    onChange={(e) => handleFieldChange(index, 'label', e.target.value)}
+                                    className="form-input"
+                                />
+                            </div>
+                            <div className="form-group-builder property-group">
+                                <label className="form-label">Type:</label>
+                                <select
+                                    value={field.field_type}
+                                    onChange={(e) => handleFieldChange(index, 'field_type', e.target.value as FormField['field_type'])}
+                                    className="form-select"
+                                >
+                                    {['text', 'number', 'email', 'date', 'dropdown', 'file_upload', 'checkbox'].map(type => (
+                                        <option key={type} value={type}>{type}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="form-group-builder property-group is-required-check">
+                                <label className="form-label">Required:</label>
+                                <input
+                                    type="checkbox"
+                                    checked={field.is_required}
+                                    onChange={(e) => handleFieldChange(index, 'is_required', e.target.checked)}
+                                    className="form-checkbox"
+                                />
+                            </div>
+                            <div className="form-group-builder property-group">
+                                <label className="form-label">Field Name (Key):</label>
+                                <input
+                                    type="text"
+                                    value={field.field_name}
+                                    onChange={(e) => handleFieldChange(index, 'field_name', e.target.value)}
+                                    className="form-input"
+                                    placeholder="client_name"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Field Configuration (Dropdown Options, etc.) */}
+                        {renderConfigEditor(field, index)}
+                    </div>
+                ))}
+            </div>
+
+            <button type="button" onClick={handleAddField} className="btn-secondary btn-add-field">
+                + Add New Field
+            </button>
+        </form>
+    );
+};
+
+export default AdminFormBuilder;

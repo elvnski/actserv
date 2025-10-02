@@ -34,3 +34,40 @@ export interface FormSchema {
 export interface FormData {
     [key: string]: string | number | boolean | File;
 }
+
+
+
+export interface Option {
+    value: string;
+    label: string;
+}
+
+export interface AdminFieldConfig {
+    // Basic field data
+    id?: number; // Optional for new fields
+    field_name: string;
+    field_type: 'text' | 'number' | 'date' | 'dropdown' | 'checkbox' | 'file_upload';
+    label: string;
+    is_required: boolean;
+    order: number;
+
+    // Nested configuration object
+    configuration: {
+        options?: Option[]; // Used for 'dropdown'
+        // Add other properties here later (e.g., min/max for number)
+    };
+}
+
+
+/**
+ * The top-level interface representing the entire form template
+ * used in the AdminFormBuilder. This mirrors the structure
+ * expected by the Django FormSerializer POST/PUT endpoint.
+ */
+export interface AdminFormConfig {
+    id?: number; // Present only when editing an existing form
+    name: string;
+    slug: string;
+    is_active: boolean;
+    fields: AdminFieldConfig[]; // The list of individual fields
+}

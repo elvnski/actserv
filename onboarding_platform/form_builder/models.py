@@ -6,6 +6,7 @@ class Form(models.Model):
     """Defines a customizable form template (e.g., 'KYC Form')."""
     name = models.CharField(max_length=255, unique=True)
     slug = models.SlugField(max_length=255, unique=True)
+    description = models.TextField(blank=True, null=True, default='')
     is_active = models.BooleanField(default=True)
 
     def __str__(self):

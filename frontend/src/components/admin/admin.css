@@ -1,0 +1,267 @@
+/* admin.css */
+
+/* --- Container and Header --- */
+.admin-container {
+    padding: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+    font-family: Arial, sans-serif;
+}
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #ccc;
+}
+
+.admin-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+}
+
+/* --- Buttons --- */
+.btn-primary {
+    background-color: #007bff; /* Blue */
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none; /* For link buttons */
+    transition: background-color 0.2s;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+.btn-danger {
+    background-color: #dc3545; /* Red */
+    color: white;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 10px;
+    transition: background-color 0.2s;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+}
+
+/* --- Table Styles (FormList) --- */
+.admin-table-wrapper {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: white;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.admin-table th, .admin-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.admin-table th {
+    background-color: #f4f4f4;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #555;
+}
+
+.admin-table tr:hover {
+    background-color: #f9f9f9;
+}
+
+/* --- Status Badges --- */
+.status-active {
+    background-color: #d4edda;
+    color: #155724;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+}
+.status-inactive {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+
+/* --- Form Builder Specific Styles --- */
+.form-meta-group {
+    padding: 20px;
+    margin-bottom: 30px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #f8f8f8;
+}
+
+.form-group-builder {
+    margin-bottom: 15px;
+}
+
+.form-label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #444;
+}
+
+.form-input, .form-select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.form-input:focus, .form-select:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.section-title {
+    font-size: 20px;
+    font-weight: bold;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    padding-bottom: 5px;
+    border-bottom: 1px dashed #ccc;
+    color: #333;
+}
+
+/* Field Cards */
+.field-card {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 20px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.field-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px dotted #e0e0e0;
+}
+
+.field-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: #007bff;
+}
+
+.field-actions button {
+    margin-left: 8px;
+}
+
+.btn-sm {
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.btn-move {
+    background: #f0f0f0;
+    color: #333;
+    border: 1px solid #ccc;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+.btn-move:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.field-properties-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* 4 properties in a row */
+    gap: 15px;
+    align-items: end;
+}
+
+.property-group {
+    margin-bottom: 0;
+}
+
+.is-required-check {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.form-checkbox {
+    width: 20px;
+    height: 20px;
+    margin-top: 5px;
+}
+
+/* Configuration Editor (Dropdown) */
+.field-config-editor {
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+    margin-top: 15px;
+}
+.config-title {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #555;
+}
+.config-option-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: center;
+}
+.config-input {
+    flex: 1;
+    font-size: 12px;
+}
+.btn-remove-option {
+    width: 30px;
+    height: 30px;
+    line-height: 1;
+    padding: 0;
+    font-size: 14px;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+}
+
+.btn-add-field {
+    margin-top: 15px;
+}

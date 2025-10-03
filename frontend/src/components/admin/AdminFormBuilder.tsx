@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
-import type { FormSchema, FormField, FormFieldConfiguration } from '../../types.ts';
+import type { FormSchema, FormField } from '../../types.ts';
 import './admin.css';
 
 const ADMIN_API_URL = 'http://127.0.0.1:8000/api/admin/forms/';
@@ -131,6 +131,71 @@ const AdminFormBuilder = () => {
             setIsLoading(false);
             return;
         }
+
+        // Checks for duplicate field names and labels
+        const fieldNames = new Set<string>();
+        const fieldLabels = new Set<string>();
+
+        for (const field of fields) {
+            const name = field.field_name.trim();
+            const label = field.label.trim();
+
+            if (!name) {
+                setError(`Field names are required for all fields.`);
+                setIsLoading(false);
+                return;
+            }
+
+            if (fieldNames.has(name)) {
+                setError(`Duplicate field name detected: "${name}". Field names must be unique.`);
+                setIsLoading(false);
+                return;
+            }
+            if (fieldLabels.has(label)) {
+                setError(`Duplicate field label detected: "${label}". Field labels must be unique.`);
+                setIsLoading(false);
+                return;
+            }
+
+            fieldNames.add(name);
+            fieldLabels.add(label);
+        }
+
+
+        // --- NEW: Check for duplicate Dropdown Options (Labels and Values) ---
+        for (const field of fields) {
+            if (field.field_type === 'dropdown') {
+                const options = (field.configuration?.options || []) as { value: string; label: string }[];
+                const optionValues = new Set<string>();
+                const optionLabels = new Set<string>();
+
+                for (const option of options) {
+                    const value = option.value.trim();
+                    const label = option.label.trim();
+
+                    if (!value || !label) {
+                        setError(`Dropdown field "${field.label}" has options with missing Value or Label.`);
+                        setIsLoading(false);
+                        return;
+                    }
+
+                    if (optionValues.has(value)) {
+                        setError(`Dropdown field "${field.label}" has duplicate option value: "${value}".`);
+                        setIsLoading(false);
+                        return;
+                    }
+                    if (optionLabels.has(label)) {
+                        setError(`Dropdown field "${field.label}" has duplicate option label: "${label}".`);
+                        setIsLoading(false);
+                        return;
+                    }
+
+                    optionValues.add(value);
+                    optionLabels.add(label);
+                }
+            }
+        }
+
 
         const data: Omit<FormSchema, 'id'> = {
             name: formName,

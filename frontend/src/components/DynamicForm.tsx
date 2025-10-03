@@ -429,7 +429,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
         <div className="dynamic-form container mt-5">
 
             <h1 style={{ color: '#1a1414' }}>{schema.name}</h1>
-            <p>{schema.description}</p>
+            <p style={{ color: '#1a1414' }}>{schema.description}</p>
             <hr />
 
             {submissionMessage && <div className="alert alert-success">{submissionMessage}</div>}

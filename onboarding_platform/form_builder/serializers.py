@@ -146,7 +146,44 @@ class DynamicSubmissionSerializer(serializers.Serializer):
             if field.is_required and not value and field.field_type != 'file_upload':
                 raise serializers.ValidationError({field.field_name: f"{field.label} is required"})
 
-            # Check 2: Basic Type Validation
+
+            # Check 2: Conditional Validation (Dependency Check)
+            dependency = field.configuration.get('dependency')
+
+            if dependency and dependency.get('target_field') and dependency.get('action') == 'is_required':
+
+                target_field_name = dependency['target_field']
+                condition = dependency['condition']
+                required_value = dependency['value']
+
+                # Get the value of the target field from the submitted data
+                target_value = data['flattened_data'].get(target_field_name)
+
+                condition_met = False
+
+                # Try to compare as numbers (covers the 'loan amount > X' case)
+                try:
+                    target_num = float(target_value) if target_value is not None and target_value != '' else 0.0
+                    required_num = float(required_value)
+
+                    if condition == '>' and target_num > required_num:
+                        condition_met = True
+                    elif condition == '<' and target_num < required_num:
+                        condition_met = True
+                    # You can add more numeric conditions here (==, >=, <=)
+
+                except (TypeError, ValueError):
+                    # Fallback or skip if not numeric (e.g., condition is 'has_value')
+                    pass
+
+                # Enforce the requirement if the condition is met
+                if condition_met:
+                    # Check if the dependent field (current field) has a value
+                    if not value:
+                        raise serializers.ValidationError({field.field_name: f"{field.label} is required because '{target_field_name}' condition was met."})
+
+
+            # Check 3: Basic Type Validation
             if field.field_type == 'number' and value and not str(value).isdigit():
                 raise serializers.ValidationError({field.field_name: "Must be a valid number"})
 

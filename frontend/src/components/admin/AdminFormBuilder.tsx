@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect, JSX} from 'react';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { FormSchema, FormField } from '../../types.ts';
@@ -84,8 +84,16 @@ const AdminFormBuilder = () => {
     // Handle updates to field configuration (e.g., dropdown options)
     const handleConfigurationChange = (index: number, config: FormFieldConfiguration) => {
         setFields(prevFields => prevFields.map((field, i) => {
+
             if (i === index) {
-                return { ...field, configuration: config };
+
+                return {
+                    ...field,
+                    configuration: {
+                        ...field.configuration, // Keep existing configuration properties
+                        ...config              // Overwrite or add new properties from the update
+                    }
+                };
             }
             return field;
         }));
@@ -242,29 +250,37 @@ const AdminFormBuilder = () => {
 
     // --- 5. Field Renderer (Dropdown Options Editor) ---
     const renderConfigEditor = (field: FormField, index: number) => {
+
+        const configElements: JSX.Element[] = [];
+        const currentConfig = field.configuration || {}; // Get the current configuration safely
+
+        // --- Dropdown Options Editor ---
         if (field.field_type === 'dropdown') {
-            const options = (field.configuration?.options || []) as { value: string; label: string }[];
+            const options = (currentConfig.options || []) as { value: string; label: string }[];
 
             const handleOptionChange = (optIndex: number, key: 'label' | 'value', value: string) => {
                 const newOptions = options.map((opt, i) => {
                     if (i === optIndex) return { ...opt, [key]: value };
                     return opt;
                 });
+
                 handleConfigurationChange(index, { options: newOptions });
             };
 
             const handleAddOption = () => {
                 const newOptions = [...options, { label: '', value: '' }];
+
                 handleConfigurationChange(index, { options: newOptions });
             };
 
             const handleRemoveOption = (optIndex: number) => {
                 const newOptions = options.filter((_, i) => i !== optIndex);
+
                 handleConfigurationChange(index, { options: newOptions });
             };
 
-            return (
-                <div className="field-config-editor">
+            configElements.push(
+                <div key="dropdown" className="field-config-editor">
                     <h5 className="config-title">Dropdown Options:</h5>
                     {options.map((option, optIndex) => (
                         <div key={optIndex} className="config-option-row">
@@ -297,9 +313,94 @@ const AdminFormBuilder = () => {
                 </div>
             );
         }
-        return null;
-    };
 
+
+        // --- Conditional Dependency Editor ---
+        const isConditionalCandidate = ['file_upload', 'text', 'number'].includes(field.field_type);
+        const dependency = currentConfig.dependency || {};
+        // The dependency is considered "enabled" if the dependency object exists in the config.
+        const dependencyEnabled = !!currentConfig.dependency;
+
+        const handleDependencyToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
+            if (e.target.checked) {
+                // Enable: Pass the entire new dependency object
+                handleConfigurationChange(index, {
+                    dependency: { target_field: '', condition: '>', value: 0, action: 'is_required' }
+                });
+            } else {
+                // Disable: Pass 'dependency: undefined' to effectively remove the dependency key from the config object
+                handleConfigurationChange(index, { dependency: undefined });
+            }
+        };
+
+        const handleDependencyChange = (key: keyof typeof dependency, val: any) => {
+            // Pass the updated dependency object
+            handleConfigurationChange(index, {
+                dependency: { ...dependency, [key]: val }
+            });
+        };
+
+        if (isConditionalCandidate) {
+            configElements.push(
+                <div key="dependency" className="field-config-editor dependency-editor">
+                    <h5 className="config-title">Conditional Requirement:</h5>
+
+                    <div className="form-group-builder is-required-check" style={{ marginBottom: '10px' }}>
+                        <label className="form-label">Enable Conditional Rule:</label>
+                        <input
+                            type="checkbox"
+                            checked={dependencyEnabled}
+                            onChange={handleDependencyToggle}
+                            className="form-checkbox"
+                        />
+                    </div>
+
+                    {dependencyEnabled && (
+                        <div className="dependency-rule-row">
+                            <span>Required IF </span>
+
+                            {/* Target Field Name */}
+                            <input
+                                type="text"
+                                placeholder="Target Field Name"
+                                value={dependency.target_field || ''}
+                                onChange={(e) => handleDependencyChange('target_field', e.target.value)}
+                                className="form-input config-input"
+                            />
+
+                            {/* Condition Operator */}
+                            <select
+                                value={dependency.condition || ''}
+                                onChange={(e) => handleDependencyChange('condition', e.target.value)}
+                                className="form-select config-input"
+                            >
+                                <option value=">"> Greater than  </option>
+                                <option value="<"> Less than  </option>
+                                <option value="=="> Equal to </option>
+                                <option value="!="> Not equal to </option>
+                                <option value="has_value"> Has Value </option>
+                            </select>
+
+                            {/* Required Value */}
+                            <input
+                                type="text"
+                                placeholder="Value (e.g., 50000)"
+                                value={dependency.value || ''}
+                                onChange={(e) => handleDependencyChange('value', e.target.value)}
+                                className="form-input config-input"
+                                // Disable value input if the condition is just 'has_value'
+                                disabled={dependency.condition === 'has_value'}
+                            />
+                            {/* Hidden field for action */}
+                            <input type="hidden" value={dependency.action || 'is_required'} />
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        return configElements.length > 0 ? <>{configElements}</> : null;
+    };
 
     // --- 6. Main Render ---
     return (

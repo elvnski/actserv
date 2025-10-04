@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import type {FormSchema, FormField, FormData} from '../types';
 import './DynamicForm.css';
+import { useNavigate } from 'react-router-dom';
+
 
 
 const DYNAMIC_SLUG_PLACEHOLDER=  'client-onboarding';
@@ -23,6 +25,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
     const [submissionMessage, setSubmissionMessage] = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
+    const navigate = useNavigate();
 
     // =======================================================================
     // 1. FETCHING DATA
@@ -174,6 +177,30 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
     // 3. SUBMISSION LOGIC
     // =======================================================================
 
+    const markFormAsCompleted = (formSlug: string) => {
+
+        try {
+
+            // 1. Retrieve the existing list (default to empty array if nothing found)
+            const storedForms = localStorage.getItem('completedForms');
+            const completedSlugs: string[] = storedForms ? JSON.parse(storedForms) : [];
+
+            // 2. Check if the slug is already there to prevent duplicates
+            if (!completedSlugs.includes(formSlug)) {
+                completedSlugs.push(formSlug);
+
+                // 3. Save the updated list back to Local Storage
+                localStorage.setItem('completedForms', JSON.stringify(completedSlugs));
+
+                // Optional: If you are on the list page, force a re-render of the list
+                // window.dispatchEvent(new Event('storage'));
+            }
+        } catch (e) {
+            console.error("Failed to save completion status to Local Storage:", e);
+        }
+    };
+
+
     const handleSubmit = async (e: React.FormEvent) => {
 
         e.preventDefault();
@@ -222,6 +249,10 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
             // Clear field errors on success
             setFieldErrors({});
             setError(null);
+            markFormAsCompleted(slugToUse);
+
+            alert(`Submission successful! ID: ${response.data.submissionId}. Admin notified.`);
+            navigate('/client/forms');
 
         }
         catch (err: any) {

@@ -1,0 +1,119 @@
+/* Base Container */
+.client-container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 20px;
+    background-color: #f8f9fa; /* Light background for the page */
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.client-title {
+    font-size: 2.2rem;
+    color: #343a40; /* Dark text */
+    margin-bottom: 10px;
+    border-bottom: 2px solid #007bff; /* Primary color underline */
+    padding-bottom: 8px;
+}
+
+.client-subtitle {
+    color: #6c757d;
+    font-size: 1.1rem;
+    margin-bottom: 30px;
+}
+
+/* --- Form List Styles --- */
+
+.form-list {
+    list-style: none;
+    padding: 0;
+}
+
+.form-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 25px 30px;
+    margin-bottom: 15px;
+    background-color: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.form-list-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(0, 123, 255, 0.15); /* Subtle blue shadow on hover */
+}
+
+.form-details {
+    flex-grow: 1;
+    margin-right: 20px;
+}
+
+.form-name {
+    font-size: 1.5rem;
+    color: #007bff; /* Primary action color */
+    margin: 0 0 5px 0;
+}
+
+.form-description {
+    color: #495057;
+    margin: 0;
+}
+
+/* --- Action & Status Styles --- */
+
+.form-action {
+    flex-shrink: 0;
+}
+
+/* Base button style (for 'Start Form' link) */
+.btn-primary {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white !important; /* Override default Link color */
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: background-color 0.2s, opacity 0.2s;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+/* Completed status styling */
+.status-completed {
+    font-weight: bold;
+    color: #28a745; /* Success green */
+    padding: 10px 20px;
+    background-color: #e2ffe8;
+    border-radius: 5px;
+    border: 1px solid #28a745;
+}
+
+/* Styling for forms marked as completed */
+.form-list-item.completed {
+    border: 1px dashed #28a745;
+    background-color: #f0fff4; /* Very light green background */
+    opacity: 0.8;
+}
+
+.form-list-item.completed:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+/* Error and No Forms messages */
+.alert-danger {
+    color: #dc3545;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}

@@ -228,3 +228,11 @@ class DynamicSubmissionSerializer(serializers.Serializer):
             sendAdminNotification.delay(submission.id)
 
             return submission
+
+
+# --- Serializer for the Public Form List ---
+class ClientFormSummarySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Form
+        fields = ('name', 'slug', 'description')

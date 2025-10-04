@@ -3,9 +3,10 @@ from rest_framework import viewsets, status
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from rest_framework import generics
+from rest_framework.permissions import AllowAny
 from .models import Form, FileAttachment
-from .serializers import FormSerializer, DynamicSubmissionSerializer
+from .serializers import FormSerializer, DynamicSubmissionSerializer, ClientFormSummarySerializer
 from .tasks import sendAdminNotification
 
 # =========================================================
@@ -54,3 +55,23 @@ class ClientSubmissionAPIView(APIView):
 
         # Return validation errors from the serializer
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# --- Public View for Client Form List ---
+class ClientFormListView(generics.ListAPIView):
+    """
+    Publicly accessible endpoint to list all active Form summaries.
+    """
+    queryset = Form.objects.filter(is_active=True).order_by('name')
+    serializer_class = ClientFormSummarySerializer
+    permission_classes = [AllowAny]
+
+# --- Public View for Client Form Detail (Next Step) ---
+class ClientFormDetailView(generics.RetrieveAPIView):
+    """
+    Publicly accessible endpoint to retrieve the full schema for one active form by slug.
+    """
+    queryset = Form.objects.filter(is_active=True)
+    serializer_class = ClientFormSummarySerializer # Will need to be updated to FormSchemaSerializer later
+    lookup_field = 'slug'
+    permission_classes = [AllowAny]

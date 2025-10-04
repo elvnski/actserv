@@ -4,6 +4,8 @@ import {BrowserRouter as Router, Routes, Route, useParams, Navigate} from 'react
 import AdminFormBuilder from "./components/admin/AdminFormBuilder.tsx";
 import FormList from "./components/admin/FormList.tsx";
 import ClientFormList from "./components/ClientFormList.tsx";
+import AdminSubmissionList from "./components/admin/AdminSubmissionList.tsx";
+import AdminSubmissionDetail from "./components/admin/AdminSubmissionDetail.tsx";
 
 
 // Wrapper to grab the slug from the url
@@ -42,6 +44,10 @@ function App() {
 
                  {/* Route for Editing an Existing Form by ID */}
                  <Route path="/admin/forms/edit/:formId" element={<AdminFormBuilder />} />
+
+                 {/* Admin Submission Routes */}
+                 <Route path="/admin/submissions" element={<AdminSubmissionList />} />
+                 <Route path="/admin/submissions/:submissionId" element={<AdminSubmissionDetail />} />
 
                  {/*Redirect root to the admin list for easy access */}
                  <Route path="/" element={<Navigate to="/admin/forms" replace />} />

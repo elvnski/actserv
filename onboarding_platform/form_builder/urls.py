@@ -8,28 +8,26 @@ from .views import (
     ClientSubmissionAPIView,
     ClientFormListView,
     ClientFormDetailView,
+    AdminSubmissionViewSet,
 )
 
 router = DefaultRouter()
 router.register(r'forms', FormAdminViewSet, basename='form-admin')
+router.register(r'submissions', AdminSubmissionViewSet, basename='submission-admin')
+
 
 urlpatterns = [
+
     # =====================================================================
-    # ADMIN API ENDPOINTS (Includes all routes from the router)
+    # ADMIN API ENDPOINTS (Includes forms and submissions routes)
     # =====================================================================
-    path('admin/', include(router.urls)),
+    path('admin/', include(router.urls)), # Forms and Submissions are now under /api/admin/
+
 
     # =====================================================================
     # CLIENT API ENDPOINTS
     # =====================================================================
-
     path('submit/', ClientSubmissionAPIView.as_view(), name='client-submission'),
-
-
-    # List all active forms for the client landing page
     path('client/forms/', ClientFormListView.as_view(), name='client-form-list'),
-
-    # Retrieve a specific form's schema by slug for filling
     path('client/forms/<str:slug>/', ClientFormDetailView.as_view(), name='client-form-detail'),
-    # =========================================
 ]

@@ -1,12 +1,12 @@
 from django.core.files.uploadedfile import UploadedFile
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import generics
 from rest_framework.permissions import AllowAny
-from .models import Form, FileAttachment
-from .serializers import FormSerializer, DynamicSubmissionSerializer, ClientFormSummarySerializer
+from .models import Form, FileAttachment, FormSubmission
+from .serializers import FormSerializer, DynamicSubmissionSerializer, ClientFormSummarySerializer, AdminSubmissionListSerializer, AdminSubmissionDetailSerializer
 from .tasks import sendAdminNotification
 
 # =========================================================
@@ -75,3 +75,23 @@ class ClientFormDetailView(generics.RetrieveAPIView):
     serializer_class = ClientFormSummarySerializer # Will need to be updated to FormSchemaSerializer later
     lookup_field = 'slug'
     permission_classes = [AllowAny]
+
+
+# ======================================================================
+# NEW ADMIN SUBMISSION VIEWSET
+# ======================================================================
+
+class AdminSubmissionViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Admin-only endpoint for viewing all submitted forms.
+    """
+    # Use FormSubmission and order by submission_date
+    queryset = FormSubmission.objects.all().order_by('-submission_date')
+
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+
+    def get_serializer_class(self):
+        """Dynamically choose the serializer based on the action."""
+        if self.action == 'list':
+            return AdminSubmissionListSerializer
+        return AdminSubmissionDetailSerializer

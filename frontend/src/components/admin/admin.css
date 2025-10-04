@@ -265,3 +265,121 @@
 .btn-add-field {
     margin-top: 15px;
 }
+
+
+
+
+
+
+/* ------------------- Base Container and Header ------------------- */
+
+.admin-container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa; /* Light background for the page */
+    min-height: 100vh;
+}
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.admin-title {
+    color: #343a40;
+    font-size: 1.8em;
+    font-weight: 600;
+}
+
+/* ------------------- Table Styles ------------------- */
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background-color: white;
+    border-radius: 8px;
+    overflow: hidden; /* Ensures rounded corners are respected */
+}
+
+.admin-table thead tr {
+    background-color: #e9ecef;
+    color: #495057;
+    text-transform: uppercase;
+    font-size: 0.85em;
+}
+
+.admin-table th, .admin-table td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.admin-table tbody tr:hover {
+    background-color: #f5f5f5;
+}
+
+/* ------------------- Status Badges ------------------- */
+
+.status-badge {
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-weight: bold;
+    color: white;
+    display: inline-block;
+}
+
+.status-success {
+    background-color: #28a745; /* Green */
+}
+
+.status-pending {
+    background-color: #ffc107; /* Yellow/Amber */
+    color: #343a40;
+}
+
+/* ------------------- Buttons/Links ------------------- */
+
+.btn-secondary, .btn-primary {
+    padding: 8px 15px;
+    border-radius: 5px;
+    text-decoration: none;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.2s;
+    border: none;
+    display: inline-block;
+    text-align: center;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 0.85em;
+}
+
+/* ------------------- Error/Info Messages ------------------- */
+
+.alert-danger {
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    color: #721c24;
+    background-color: #f8d7da;
+}

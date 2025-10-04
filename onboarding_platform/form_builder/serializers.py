@@ -236,3 +236,57 @@ class ClientFormSummarySerializer(serializers.ModelSerializer):
     class Meta:
         model = Form
         fields = ('name', 'slug', 'description')
+
+
+# ======================================================================
+# ADMIN SUBMISSION SERIALIZERS
+# ======================================================================
+
+class AdminFileAttachmentSerializer(serializers.ModelSerializer):
+    """Serializer for file attachments linked to a submission."""
+    # This generates the full URL to the file for downloading
+    file_url = serializers.FileField(source='file', read_only=True)
+
+    class Meta:
+        model = FileAttachment
+        # Use uploaded_at as per your models.py
+        fields = ('field_name', 'file_url', 'uploaded_at')
+        read_only_fields = fields
+
+class AdminSubmissionDetailSerializer(serializers.ModelSerializer):
+    """Full detail serializer for a single form submission."""
+    form_name = serializers.CharField(source='form.name', read_only=True)
+
+    # 1. Custom field to convert SubmissionData EAV entries into a dictionary
+    submission_data = serializers.SerializerMethodField()
+
+    # 2. Retrieve all related file attachments (using related_name='attachments')
+    attachments = AdminFileAttachmentSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = FormSubmission
+        # Use submission_date as per your models.py
+        fields = ('id', 'form_name', 'client_identifier', 'submission_date', 'is_notified', 'submission_data', 'attachments')
+        read_only_fields = fields
+
+    def get_submission_data(self, instance: FormSubmission) -> dict:
+        """
+        Converts the EAV model (SubmissionData instances) into a flat key-value dictionary.
+        Uses the ForeignKey related_name 'data_entries' from SubmissionData.
+        """
+        data_dict = {}
+        # Iterate over all SubmissionData entries related to this submission
+        for entry in instance.data_entries.all():
+            data_dict[entry.field_name] = entry.value
+        return data_dict
+
+
+class AdminSubmissionListSerializer(serializers.ModelSerializer):
+    """Summary serializer for the submission list view."""
+    form_name = serializers.CharField(source='form.name', read_only=True)
+
+    class Meta:
+        model = FormSubmission
+        # Use submission_date and is_notified for the list view
+        fields = ('id', 'form_name', 'submission_date', 'client_identifier', 'is_notified')
+        read_only_fields = fields

@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'form_builder',
     'django_celery_results',
     'corsheaders',
+    'rest_framework.authtoken',
 ]
 
 
@@ -57,7 +58,38 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'onboarding_platform.urls'
 
+# ======================================================================
+# --- SESSION & CSRF CONFIGURATION FOR CROSS-PORT DEVELOPMENT ---
+# ======================================================================
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        # 1. NEW: Prioritize Token Authentication
+        'rest_framework.authentication.TokenAuthentication',
+
+        # 2. Keep SessionAuthentication for the /admin/ login screen itself
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ]
+}
+
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
+
+# 2. Add SECURE_PROXY_SSL_HEADER for production
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+CORS_ALLOW_CREDENTIALS = True
+
 CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]

@@ -27,7 +27,7 @@ urlpatterns = [
     # =====================================================================
     # CLIENT API ENDPOINTS
     # =====================================================================
-    path('submit/', ClientSubmissionAPIView.as_view(), name='client-submission'),
+    path('client/submissions/', ClientSubmissionAPIView.as_view(), name='client-submission'),
     path('client/forms/', ClientFormListView.as_view(), name='client-form-list'),
     path('client/forms/<str:slug>/', ClientFormDetailView.as_view(), name='client-form-detail'),
 ]

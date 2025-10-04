@@ -6,7 +6,8 @@ from rest_framework.views import APIView
 from rest_framework import generics
 from rest_framework.permissions import AllowAny
 from .models import Form, FileAttachment, FormSubmission
-from .serializers import FormSerializer, DynamicSubmissionSerializer, ClientFormSummarySerializer, AdminSubmissionListSerializer, AdminSubmissionDetailSerializer
+from .serializers import FormSerializer, DynamicSubmissionSerializer, ClientFormSummarySerializer, \
+    AdminSubmissionListSerializer, AdminSubmissionDetailSerializer, ClientFormDetailSerializer
 from .tasks import sendAdminNotification
 
 # =========================================================
@@ -34,8 +35,7 @@ class ClientSubmissionAPIView(APIView):
    across FormSubmission, SubmissionData, and FileAttachment models.
     """
 
-    # We allow unauthenticated users (clients) to post a submission
-    # permission_classes = [AllowAny]
+    permission_classes = [AllowAny]
 
     def post(self, request, format=None):
 
@@ -72,7 +72,7 @@ class ClientFormDetailView(generics.RetrieveAPIView):
     Publicly accessible endpoint to retrieve the full schema for one active form by slug.
     """
     queryset = Form.objects.filter(is_active=True)
-    serializer_class = ClientFormSummarySerializer # Will need to be updated to FormSchemaSerializer later
+    serializer_class = ClientFormDetailSerializer  # Will need to be updated to FormSchemaSerializer later
     lookup_field = 'slug'
     permission_classes = [AllowAny]
 

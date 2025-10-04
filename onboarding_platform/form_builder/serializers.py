@@ -290,3 +290,16 @@ class AdminSubmissionListSerializer(serializers.ModelSerializer):
         # Use submission_date and is_notified for the list view
         fields = ('id', 'form_name', 'submission_date', 'client_identifier', 'is_notified')
         read_only_fields = fields
+
+
+class ClientFormDetailSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the public client to retrieve a form definition.
+    """
+
+    fields = FormFieldSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Form
+        fields = ['id', 'name', 'slug', 'description', 'fields']
+        read_only_fields = fields

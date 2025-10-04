@@ -3,7 +3,7 @@ import axios from 'axios';
 import type {FormSchema, FormField, FormData} from '../types';
 import './DynamicForm.css';
 import { useNavigate } from 'react-router-dom';
-
+import { CLIENT_FORM_DETAIL_ENDPOINT, CLIENT_SUBMISSION_ENDPOINT } from '../config/api.ts';
 
 
 const DYNAMIC_SLUG_PLACEHOLDER=  'client-onboarding';
@@ -43,7 +43,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
 
             try {
 
-                const response = await axios.get(`/api/admin/forms/${slugToUse}/`)
+
+                const response = await axios.get(`${CLIENT_FORM_DETAIL_ENDPOINT}${slugToUse}/`)
                 setSchema(response.data);
                 setIsLoading(false);
             }
@@ -238,7 +239,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
 
         try {
 
-            const response = await axios.post('/api/submit/', submissionData, {
+            const response = await axios.post(CLIENT_SUBMISSION_ENDPOINT, submissionData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },

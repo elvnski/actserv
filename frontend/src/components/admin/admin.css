@@ -383,3 +383,10 @@
     color: #721c24;
     background-color: #f8d7da;
 }
+
+
+.admin-nav {
+    display: flex;
+    gap: 10px; /* Space between links/buttons */
+    align-items: center;
+}

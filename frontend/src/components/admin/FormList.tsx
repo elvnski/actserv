@@ -56,20 +56,37 @@ const FormList = () => {
     if (loading) return <div className="admin-container" style={{ color: 'black' }}>Loading Form Templates...</div>;
     if (error) return <div className="admin-container" style={{ color: 'red' }}>Error: {error}</div>;
 
+    const handleLogout = () => {
+        logout();
+        navigate('/admin/login');
+    };
+
     return (
         <div className="admin-container">
+
+            <nav className="admin-nav">
+                <Link to="/admin/submissions" className="btn-secondary btn-sm" style={{marginRight: '10px'}}>
+                    Form Submissions
+                </Link>
+                <button onClick={handleLogout} className="btn-danger btn-sm">
+                    Logout
+                </button>
+            </nav>
+
+
             <header className="admin-header">
                 <h1 className="admin-title">Form Templates Administration</h1>
-                <Link
-                    to="/admin/forms/new"
-                    className="btn-primary"
-                >
-                    + Create New Form
-                </Link>
             </header>
 
+            <Link
+                to="/admin/forms/new"
+                className="btn-primary"
+            >
+                + Create New Form
+            </Link>
+
             {forms.length === 0 ? (
-                <div className="admin-table-wrapper" style={{ padding: '20px', textAlign: 'center' }}>
+                <div className="admin-table-wrapper" style={{ padding: '20px', textAlign: 'center', marginBottom: '30px' }}>
                     <p style={{ color: '#666' }}>No form templates found. Click 'Create New Form' to begin.</p>
                 </div>
             ) : (
@@ -110,13 +127,13 @@ const FormList = () => {
                                 <td style={{ textAlign: 'right' }}>
                                     <Link
                                         to={`/admin/forms/edit/${form.slug}`}
-                                        style={{ color: '#007bff', textDecoration: 'none', marginRight: '15px' }}
+                                        className="btn-secondary btn-sm"
                                     >
                                         Edit
                                     </Link>
                                     <button
                                         onClick={() => form.id && handleDelete(form.slug)}
-                                        className="btn-danger"
+                                        className="btn-danger btn-sm"
                                     >
                                         Delete
                                     </button>

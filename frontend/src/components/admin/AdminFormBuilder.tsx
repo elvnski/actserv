@@ -3,6 +3,8 @@ import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { FormSchema, FormField } from '../../types.ts';
 import './admin.css';
+import { useAdminAuth } from './context/AdminAuthContext.tsx';
+import { Link } from 'react-router-dom';
 
 const ADMIN_API_URL = 'http://127.0.0.1:8000/api/admin/forms/';
 
@@ -32,8 +34,17 @@ const AdminFormBuilder = () => {
     const [isEditMode, setIsEditMode] = useState(!!formId);
     const [isActive, setIsActive] = useState(false);
 
+    const { logout, isAuthReady } = useAdminAuth();
+
+
     // --- 2. Fetch Form Data for Editing ---
     useEffect(() => {
+
+        if (!isAuthReady) {
+            // Keep loading state true while waiting for context
+            return;
+        }
+
         if (formId) {
             setIsLoading(true);
             axios.get<FormSchema>(`${ADMIN_API_URL}${formId}/`)
@@ -59,7 +70,7 @@ const AdminFormBuilder = () => {
                 })
                 .finally(() => setIsLoading(false));
         }
-    }, [formId]);
+    }, [formId, isAuthReady]);
 
 
     // --- 3. Handlers ---
@@ -411,21 +422,34 @@ const AdminFormBuilder = () => {
         return configElements.length > 0 ? <>{configElements}</> : null;
     };
 
+
+    const handleLogout = () => {
+        logout();
+        navigate('/admin/login');
+    };
+
     // --- 6. Main Render ---
     return (
         // 2. Apply admin-container
         <form onSubmit={handleSubmit} className="admin-container">
+
+            <nav className="admin-nav">
+                <Link to="/admin/submissions" className="btn-secondary btn-sm" style={{marginRight: '10px'}}>
+                    Form Submissions
+                </Link>
+                <Link to="/admin/forms" className="btn-secondary btn-sm" style={{marginRight: '10px'}}>
+                    Form Builder
+                </Link>
+                <button onClick={handleLogout} className="btn-danger btn-sm">
+                    Logout
+                </button>
+            </nav>
+
             <header className="admin-header">
                 <h1 className="admin-title">
                     {isEditMode ? `Edit Form: ${formName}` : 'Create New Form Template'}
                 </h1>
-                <button
-                    type="submit"
-                    className="btn-primary"
-                    disabled={isLoading}
-                >
-                    {isLoading ? 'Saving...' : 'Save Form Template'}
-                </button>
+
             </header>
 
             {error && <div className="alert-danger" style={{ marginBottom: '20px', padding: '10px' }}>{error}</div>}
@@ -550,6 +574,16 @@ const AdminFormBuilder = () => {
             <button type="button" onClick={handleAddField} className="btn-secondary btn-add-field">
                 + Add New Field
             </button>
+
+            <div style={{ marginTop: '25px', textAlign: 'center' }}>
+                <button
+                    type="submit"
+                    className="btn-primary"
+                    disabled={isLoading}
+                >
+                    {isLoading ? 'Saving...' : 'Save Form Template'}
+                </button>
+            </div>
         </form>
     );
 };

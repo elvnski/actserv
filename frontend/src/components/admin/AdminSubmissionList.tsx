@@ -1,11 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './admin.css';
 import { useAdminAuth } from './context/AdminAuthContext.tsx';
-import { useNavigate } from 'react-router-dom';
+
+// 🌟 New Imports for TanStack Table 🌟
+import {
+    useReactTable,
+    getCoreRowModel,
+    flexRender,
+    type ColumnDef,
+    type SortingState,
+    type PaginationState,
+} from '@tanstack/react-table';
 
 
+// --- INTERFACES ---
 interface SubmissionSummary {
     id: number;
     form_name: string;
@@ -14,41 +24,203 @@ interface SubmissionSummary {
     is_notified: boolean;
 }
 
+// 🌟 Matches the response from Django's CustomPageNumberPagination 🌟
+interface PaginatedResponse {
+    pageIndex: number;
+    pageSize: number;
+    totalRows: number;
+    totalPages: number;
+    rows: SubmissionSummary[]; // The actual data records
+}
 
+
+
+// --- CONSTANTS ---
 const ADMIN_SUBMISSIONS_API_URL = 'http://127.0.0.1:8000/api/admin/submissions/';
 
+// --- HELPER FUNCTIONS ---
+const formatDateTime = (isoString: string): string => {
+    try {
+        const date = new Date(isoString);
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    } catch {
+        return 'Invalid Date';
+    }
+};
 
+// --- COMPONENT ---
 const AdminSubmissionList = () => {
+
+    // ------------------------------------------------
+    // 1. STATE MANAGEMENT (Updated for Pagination)
+    // ------------------------------------------------
+
     const [submissions, setSubmissions] = useState<SubmissionSummary[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [sorting, setSorting] = useState<SortingState>([]); // 🌟 New State for Sorting 🌟
+
+    const [globalFilter, setGlobalFilter] = useState('');
+
+    // 🌟 Pagination 🌟
+    const [pagination, setPagination] = useState<PaginationState>({
+        pageIndex: 0, // TanStack uses 0-based index
+        pageSize: 12, // Must match the Django default/frontend choice
+    });
+
+    // 🌟 Metadata from API 🌟
+    const [dataMeta, setDataMeta] = useState({
+        totalRows: 0,
+        totalPages: 0,
+    });
 
     const { logout, isAuthReady } = useAdminAuth();
     const navigate = useNavigate();
 
+    // ------------------------------------------------
+    // 2. DATA FETCHING
+    // ------------------------------------------------
     useEffect(() => {
-
         if (!isAuthReady) {
-            // Keep loading state true while waiting for context
             return;
         }
 
-        // If the component gets here, the global Axios header is set (if a token exists).
-        axios.get<SubmissionSummary[]>(ADMIN_SUBMISSIONS_API_URL)
+        setIsLoading(true);
+
+        // Calculate Django 1-based page number
+        const page = pagination.pageIndex + 1;
+        const pageSize = pagination.pageSize;
+
+        // Build the query string with pagination and sorting
+        let url = `${ADMIN_SUBMISSIONS_API_URL}?page=${page}&pageSize=${pageSize}`;
+
+        if (globalFilter) {
+            // Django's SearchFilter uses the query parameter 'search'
+            url += `&search=${globalFilter}`;
+        }
+
+        // FUTURE STEP: Add server-side sorting here
+        if (sorting.length > 0) {
+            const sortKey = sorting[0].id;
+            const sortDir = sorting[0].desc ? '-' : '';
+            // Django REST Framework uses "ordering" query parameter
+            url += `&ordering=${sortDir}${sortKey}`;
+        }
+
+        axios.get<PaginatedResponse>(url)
             .then(response => {
-                setSubmissions(response.data);
+                const { rows, totalRows, totalPages } = response.data;
+
+                // Set data rows
+                setSubmissions(rows);
+
+                // Set metadata for controls
+                setDataMeta({ totalRows, totalPages });
+
                 setError(null);
             })
             .catch(err => {
-                // If the error is a 401/403, and the user IS logged in, something is wrong.
-                // If the error is due to an expired token, the user might need to log in again.
-                console.error("Failed to fetch submissions:", err.response?.data || err);
-                setError("Failed to load submissions. Check API connection or Admin authentication.");
-                setSubmissions([]); // Ensure old submissions aren't displayed on error
+                console.error("Submission fetch error:", err);
+                if (err.response && err.response.status === 401) {
+                    logout();
+                    navigate('/admin/login');
+                } else {
+                    setError('Failed to load submissions. Please check the API.');
+                }
             })
-            .finally(() => setIsLoading(false));
+            .finally(() => {
+                setIsLoading(false);
+            });
 
-    }, [isAuthReady]);
+        // 🌟 DEPENDENCY ARRAY: Fetch new data when page or size changes 🌟
+    }, [isAuthReady, logout, navigate, pagination.pageIndex, pagination.pageSize, sorting, globalFilter]);
+
+
+    // ------------------------------------------------
+    // 3. COLUMN DEFINITION (TanStack Table)
+    // ------------------------------------------------
+    const columns = useMemo<ColumnDef<SubmissionSummary>[]>(
+        () => [
+            {
+                accessorKey: 'id',
+                header: () => <span>ID</span>,
+                cell: info => info.getValue(),
+                footer: props => props.column.id,
+            },
+            {
+                accessorKey: 'form_name',
+                header: () => <span>Form Name</span>,
+                cell: info => info.getValue(),
+            },
+            {
+                accessorKey: 'submission_date',
+                header: () => <span>Submission Date</span>,
+                // Custom cell render function to use your formatDateTime helper
+                cell: info => formatDateTime(info.getValue() as string),
+            },
+            {
+                accessorKey: 'client_identifier',
+                header: 'Client ID',
+                cell: info => info.getValue() || 'N/A',
+            },
+            {
+                accessorKey: 'is_notified',
+                header: 'Notified',
+                // Custom render for the status badge
+                cell: info => (
+                    <span className={`status-badge ${info.getValue() ? 'status-success' : 'status-pending'}`}>
+                        {info.getValue() ? 'Yes' : 'No'}
+                    </span>
+                ),
+            },
+            // The action column is not tied to data, so we use a display column
+            {
+                id: 'actions',
+                header: 'Actions',
+                cell: ({ row }) => (
+                    <Link to={`/admin/submissions/${row.original.id}`} className="btn-secondary btn-sm">
+                        Details
+                    </Link>
+                ),
+                enableSorting: false, // Actions column should not be sortable
+            },
+        ],
+        []
+    );
+
+
+    // ------------------------------------------------
+    // 4. TABLE INSTANCE (TanStack Table)
+    // ------------------------------------------------
+    const table = useReactTable({
+        data: submissions,
+        columns,
+        state: {
+            sorting,
+            pagination,
+            globalFilter,
+        },
+        // 🌟 TELLS TANSTACK: Do not do sorting/pagination locally 🌟
+        manualSorting: true,
+        manualPagination: true,
+
+        // 🌟 Tells TanStack to allow external (manual) filtering 🌟
+        manualFiltering: true,
+
+        // Pass total row count from the API metadata
+        pageCount: dataMeta.totalPages,
+
+        onSortingChange: setSorting,
+        onPaginationChange: setPagination,
+
+        onGlobalFilterChange: (updater) => {
+            // When filter changes, reset the page index to 0
+            setPagination(prev => ({ ...prev, pageIndex: 0 }));
+            setGlobalFilter(updater);
+        },
+
+        getCoreRowModel: getCoreRowModel(),
+    });
 
 
     const handleLogout = () => {
@@ -56,76 +228,132 @@ const AdminSubmissionList = () => {
         navigate('/admin/login');
     };
 
-
-    const formatDateTime = (isoString: string) => {
-        if (!isoString) return 'N/A';
-        return new Date(isoString).toLocaleString();
-    };
+    // ------------------------------------------------
+    // 5. COMPONENT RENDER
+    // ------------------------------------------------
 
     return (
         <div className="admin-container">
 
-            <header className="admin-header">
-                <h1 className="admin-title">Client Submissions Review</h1>
+            <nav className="admin-nav">
+                <Link to="/admin/forms" className="btn-secondary btn-sm" style={{marginRight: '10px'}}>
+                    Form Builder
+                </Link>
+                <button onClick={handleLogout} className="btn-danger btn-sm">
+                    Logout
+                </button>
+            </nav>
 
-                <nav className="admin-nav">
-                    <Link to="/admin/forms" className="btn-secondary btn-sm" style={{marginRight: '10px'}}>
-                        Form Builder
-                    </Link>
-                    <button onClick={handleLogout} className="btn-secondary btn-sm">
-                        Logout
-                    </button>
-                </nav>
-            </header>
 
-            {/* 1. Show Loading State While fetching data */}
-            {isLoading ? (
-                <p>Loading submissions...</p>
-            ) : (
-                // 2. Once loading is complete (isLoading === false)
+            <h1>Form Submissions List</h1>
+
+
+            {/* Loading/Error State */}
+            {isLoading && <p>Loading submissions...</p>}
+            {error && <p className="error-message">{error}</p>}
+
+
+            {/* 🌟 Search Input Field 🌟 */}
+            <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-end' }}>
+                <input
+                    type="text"
+                    placeholder="Search by Client ID or Form Name..."
+                    value={globalFilter ?? ''}
+                    onChange={e => table.setGlobalFilter(e.target.value)}
+                    style={{
+                        padding: '8px 12px',
+                        borderRadius: '4px',
+                        backgroundColor: 'white', // White background
+                        border: '1px solid #343a40', // Border matching header color
+                        color: '#343a40', // Text matching header color
+                        width: '300px'
+                    }}
+                />
+            </div>
+
+            {/* Loading/Error State */}
+            {isLoading && <p>Loading submissions...</p>}
+            {error && <p className="error-message">{error}</p>}
+
+
+            {/* Render Table when data is available */}
+            {!isLoading && !error && (
                 <>
-                    {/* A. Show Error Message ONLY if error is present */}
-                    {error && <div className="alert-danger">{error}</div>}
-
-                    {/* B. Show Table or Empty Message based on submissions data */}
-                    {submissions.length === 0 ? (
-                        <p>No submissions have been recorded yet.</p>
-                    ) : (
-                        // Render the table only if there is data
-                        <table className="admin-table">
+                    <div className="table-responsive">
+                        <table className="custom-table">
+                            {/* ... (Existing Table Header and Body logic, unchanged) ... */}
                             <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Form Name</th>
-                                <th>Submitted On</th>
-                                <th>Client Identifier</th>
-                                <th>Notified</th>
-                                <th>Actions</th>
-                            </tr>
+                            {table.getHeaderGroups().map(headerGroup => (
+                                <tr key={headerGroup.id}>
+                                    {headerGroup.headers.map(header => (
+                                        <th
+                                            key={header.id}
+                                            colSpan={header.colSpan}
+                                            onClick={header.column.getToggleSortingHandler()}
+                                            className={header.column.getCanSort() ? 'cursor-pointer' : ''}
+                                        >
+                                            {header.isPlaceholder ? null : (
+                                                <>
+                                                    {flexRender(
+                                                        header.column.columnDef.header,
+                                                        header.getContext()
+                                                    )}
+                                                    {{
+                                                        asc: ' 🔼',
+                                                        desc: ' 🔽',
+                                                    }[header.column.getIsSorted() as string] ?? null}
+                                                </>
+                                            )}
+                                        </th>
+                                    ))}
+                                </tr>
+                            ))}
                             </thead>
                             <tbody>
-                            {submissions.map(sub => (
-                                <tr key={sub.id}>
-                                    <td style={{ color: 'black' }}>{sub.id}</td>
-                                    <td style={{ color: 'black' }}>{sub.form_name}</td>
-                                    <td style={{ color: 'black' }}>{formatDateTime(sub.submission_date)}</td>
-                                    <td style={{ color: 'black' }}>{sub.client_identifier || 'N/A'}</td>
-                                    <td>
-                                            <span className={`status-badge ${sub.is_notified ? 'status-success' : 'status-pending'}`}>
-                                                {sub.is_notified ? 'Yes' : 'No'}
-                                            </span>
-                                    </td>
-                                    <td>
-                                        <Link to={`/admin/submissions/${sub.id}`} className="btn-secondary btn-sm">
-                                            View Details
-                                        </Link>
-                                    </td>
+                            {table.getRowModel().rows.map(row => (
+                                <tr key={row.id}>
+                                    {row.getVisibleCells().map(cell => (
+                                        <td key={cell.id} style={{ color: 'black' }}>
+                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                        </td>
+                                    ))}
                                 </tr>
                             ))}
                             </tbody>
                         </table>
-                    )}
+                    </div>
+
+                    {/* 🌟 NEW: Pagination Controls 🌟 */}
+                    <div className="pagination-controls" style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+
+                        {/* Status Message */}
+                        <span>
+                            Page {table.getState().pagination.pageIndex + 1} of {dataMeta.totalPages} (Total {dataMeta.totalRows} Submissions)
+                        </span>
+
+                        {/* Buttons */}
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                            <button
+                                onClick={() => table.previousPage()}
+                                disabled={!table.getCanPreviousPage()}
+                                className="btn-secondary"
+                            >
+                                Previous Page
+                            </button>
+                            <button
+                                onClick={() => table.nextPage()}
+                                disabled={!table.getCanNextPage()}
+                                className="btn-secondary"
+                            >
+                                Next Page
+                            </button>
+                        </div>
+                    </div>
                 </>
+            )}
+
+            {!isLoading && !error && submissions.length === 0 && (
+                <p>No submissions found.</p>
             )}
         </div>
     );

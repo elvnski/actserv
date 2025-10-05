@@ -1,14 +1,17 @@
 from django.core.files.uploadedfile import UploadedFile
+from rest_framework import generics
 from rest_framework import viewsets, status, permissions
+from rest_framework.filters import OrderingFilter
+from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework import generics
-from rest_framework.permissions import AllowAny
-from .models import Form, FileAttachment, FormSubmission
+from rest_framework.filters import OrderingFilter, SearchFilter
+
+from .models import Form, FormSubmission
+from .pagination import CustomPageNumberPagination
 from .serializers import FormSerializer, DynamicSubmissionSerializer, ClientFormSummarySerializer, \
     AdminSubmissionListSerializer, AdminSubmissionDetailSerializer, ClientFormDetailSerializer
-from .tasks import sendAdminNotification
 
 # =========================================================
 # 1. Admin API ViewSet (For Form Configuration)
@@ -88,10 +91,20 @@ class AdminSubmissionViewSet(viewsets.ReadOnlyModelViewSet):
     """
     Admin-only endpoint for viewing all submitted forms.
     """
-    # Use FormSubmission and order by submission_date
-    queryset = FormSubmission.objects.all().order_by('-submission_date')
 
+    # Use FormSubmission and order by submission_date
+    queryset = FormSubmission.objects.all()
+
+    filter_backends = [OrderingFilter, SearchFilter]
+
+    search_fields = ['client_identifier', 'form__name']
+
+    ordering_fields = ['id', 'submission_date', 'client_identifier', 'form_name', 'is_notified']
+    ordering = ['-submission_date'] # Default sort by newest first
+
+    pagination_class = CustomPageNumberPagination
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+
 
     def get_serializer_class(self):
         """Dynamically choose the serializer based on the action."""

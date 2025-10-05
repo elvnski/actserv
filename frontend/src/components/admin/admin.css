@@ -60,6 +60,7 @@
     border-radius: 8px;
     overflow: hidden;
     background-color: white;
+    margin: 30px;
 }
 
 .admin-table {
@@ -284,7 +285,7 @@
 
 .admin-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     margin-bottom: 25px;
     padding-bottom: 10px;
@@ -352,7 +353,6 @@
     border-radius: 5px;
     text-decoration: none;
     cursor: pointer;
-    font-size: 0.9em;
     transition: background-color 0.2s;
     border: none;
     display: inline-block;
@@ -387,10 +387,11 @@
 
 .admin-nav {
     display: flex;
-    gap: 10px; /* Space between links/buttons */
+    gap: 10px;
+    justify-content: flex-end;
     align-items: center;
+    margin-bottom: 50px;
 }
-
 
 /* --- AdminSubmissionDetail.tsx Table Styles --- */
 
@@ -451,4 +452,115 @@
     font-size: 0.85em;
     color: #777;
     margin-left: 15px;
+}
+
+
+/* form_builder/admin.css */
+
+/* --------------------------------------------------
+ * 1. Admin Container and General Layout
+ * -------------------------------------------------- */
+.admin-container {
+    padding: 30px;
+    max-width: 1200px; /* Optional: Constrain width for large screens */
+    margin: 0 auto;
+    background-color: #f8f9fa; /* Light background for the page area */
+    min-height: 100vh;
+}
+
+.admin-container h1 {
+    color: #343a40;
+    margin-bottom: 25px;
+    font-size: 2rem;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 10px;
+}
+
+.error-message {
+    color: #dc3545;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+/* --------------------------------------------------
+ * 2. Custom Table (Datatable) Styling
+ * -------------------------------------------------- */
+.table-responsive {
+    overflow-x: auto; /* Ensures horizontal scrolling on small screens */
+    margin-top: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); /* Soft shadow for depth */
+}
+
+.custom-table {
+    width: 100%;
+    border-collapse: collapse; /* Removes double borders */
+    background-color: #ffffff; /* White background for all rows */
+}
+
+/* Table Header */
+.custom-table thead th {
+    background-color: #343a40; /* Dark background for the header */
+    color: white;
+    font-weight: 600;
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.custom-table thead th.cursor-pointer:hover {
+    background-color: #495057; /* Slightly darker on hover to indicate interactivity */
+}
+
+/* Table Body Cells */
+.custom-table tbody td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e9ecef;
+    color: #495057 !important; /* Ensures the cell text is dark grey */
+}
+
+/* 🌟 Alternate Row Shading (Zebra Stripes) 🌟 */
+.custom-table tbody tr:nth-child(even) {
+    background-color: #f1f1f1; /* Light grey shade for even rows */
+}
+
+.custom-table tbody tr:hover {
+    background-color: #e2e6ea; /* Highlight row on hover for better focus */
+}
+
+/* --------------------------------------------------
+ * 3. Utility Styles (Badges/Buttons)
+ * -------------------------------------------------- */
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: inline-block;
+}
+
+.status-success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-pending {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.btn-secondary {
+    padding: 6px 10px;
+    border-radius: 4px;
+    background-color: #343a40;
+    color: white !important;
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: background-color 0.2s;
+}
+
+.btn-secondary:hover {
+    background-color: #1a1414;
 }

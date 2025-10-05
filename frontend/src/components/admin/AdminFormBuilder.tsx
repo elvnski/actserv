@@ -30,16 +30,21 @@ const AdminFormBuilder = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isEditMode, setIsEditMode] = useState(!!formId);
+    const [isActive, setIsActive] = useState(false);
 
     // --- 2. Fetch Form Data for Editing ---
     useEffect(() => {
         if (formId) {
             setIsLoading(true);
             axios.get<FormSchema>(`${ADMIN_API_URL}${formId}/`)
+
                 .then(response => {
+
                     setFormName(response.data.name);
                     setFormSlug(response.data.slug);
                     setFormDescription(response.data.description || '');
+                    setIsActive(response.data.is_active);
+
                     // Ensure field IDs are numbers (for local state keys/mapping)
                     const loadedFields = response.data.fields.map(field => ({
                         ...field,
@@ -65,6 +70,10 @@ const AdminFormBuilder = () => {
         if (name === 'name') setFormName(value);
         if (name === 'slug') setFormSlug(value);
         if (name === 'description') setFormDescription(value);
+    };
+
+    const handleActiveToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setIsActive(e.target.checked);
     };
 
     // Handle updates to individual field properties (label, type, required)
@@ -209,7 +218,7 @@ const AdminFormBuilder = () => {
             name: formName,
             slug: formSlug,
             description: formDescription,
-            is_active: true, // Always set active upon creation/update
+            is_active: isActive, // Always set active upon creation/update
             fields: fields.map((field) => {
                 const isNewField = typeof field.id === 'number' && field.id < 1;
 
@@ -454,6 +463,22 @@ const AdminFormBuilder = () => {
                         rows={3}
                     />
                 </div>
+
+                {isEditMode && (
+                    <div className="form-group-builder is-active-check">
+                        <label className="form-label">
+                            {isActive ? 'Form is Active' : 'Form is Deactivated'}
+                        </label>
+                        <input
+                            type="checkbox"
+                            checked={isActive}
+                            onChange={handleActiveToggle}
+                            className="form-checkbox"
+                            title="Activate or Deactivate this form."
+                        />
+                    </div>
+                )}
+
             </div>
 
             {/* --- Field Builder Section --- */}

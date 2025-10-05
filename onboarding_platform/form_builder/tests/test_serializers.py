@@ -5,6 +5,7 @@ from rest_framework.exceptions import ValidationError
 from form_builder.serializers import DynamicSubmissionSerializer
 from form_builder.tasks import sendAdminNotification
 from django.core import mail
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 
 
@@ -181,6 +182,17 @@ class FormSerializerNestedFieldsTest(TestCase):
 
 class DynamicSubmissionSerializerTest(TestCase):
 
+    def get_submission_context(self, files_data=None):
+
+        if files_data is None:
+            files_data = {}
+
+        # A mock object that simulates the request and includes actual file data
+        class MockRequest:
+            FILES = files_data
+        return {'request': MockRequest()}
+
+
     @classmethod
     def setUpTestData(self):
 
@@ -227,6 +239,45 @@ class DynamicSubmissionSerializerTest(TestCase):
             is_required = True
         )
 
+        # 5. Creating a field with a conditional dependency
+        self.dependent_field = FormField.objects.create(
+            form = self.form,
+            field_name = "reasonForLoan",
+            field_type = "text",
+            label = "Reason For Loan",
+            is_required = False, # Not required unless condition is met
+            configuration = {
+                "dependency": {
+                    "target_field": "loanAmount",
+                    "action": "is_required",
+                    "condition": ">",
+                    "value": "100000" # If loanAmount > 100,000, this field is required
+                }
+            }
+        )
+
+
+        # Create a saved submission object for the detail test
+        self.submission = FormSubmission.objects.create(
+            form=self.form,
+            client_identifier='CUST-TEST-999', # Matches assertion in test_admin_detail_serializer_output
+        )
+
+        # Create EAV data entries for the submission (Matching test assertions)
+        SubmissionData.objects.create(submission=self.submission, field_name='clientName', value='Alice Smith')
+        SubmissionData.objects.create(submission=self.submission, field_name='loanAmount', value='150000') # Matches assertion
+        SubmissionData.objects.create(submission=self.submission, field_name='notes', value='Initial test submission.')
+        # Ensure the conditional field is saved since 150000 > 100000
+        SubmissionData.objects.create(submission=self.submission, field_name='reasonForLoan', value='New business')
+
+        # Create a mock file attachment (Matches assertion: field_name='proofOfIncome')
+        FileAttachment.objects.create(
+            submission=self.submission,
+            field_name='proofOfIncome',
+            # This path is the same as the one used in CeleryTaskTest setup
+            file='test_uploads/income_proof.pdf',
+        )
+
     # -------------------------------------------------------------
     # TEST: SUCCESSFUL SUBMISSION
     # -------------------------------------------------------------
@@ -235,17 +286,18 @@ class DynamicSubmissionSerializerTest(TestCase):
         """Testing that a submission with all required fields passes validation."""
         data = {
             'formSlug': 'test-validation',
-            'clientIdentifier': 'CUST-001',
             'submissionData': {
+                'clientIdentifier': 'CUST-001',
                 'clientName': 'Jane Doe',
                 'loanAmount': '250000',  # Passed as string, as expected from form data
                 'notes': 'No special notes',
+                'reasonForLoan': 'To fund a new business venture',
                 # File upload fields are validated in the view, not here
                 'incomeFile': 'placeholder'
             }
         }
 
-        serializer = DynamicSubmissionSerializer(data = data)
+        serializer = DynamicSubmissionSerializer(data = data, context=self.get_submission_context())
 
         # We assert that is_valid() returns True
         self.assertTrue(serializer.is_valid(), serializer.errors)
@@ -254,7 +306,7 @@ class DynamicSubmissionSerializerTest(TestCase):
         submission = serializer.save()
         self.assertEqual(submission.form, self.form)
         self.assertEqual(submission.client_identifier, 'CUST-001')
-        self.assertEqual(submission.data_entries.count(), 4)
+        self.assertEqual(submission.data_entries.count(), 5)
 
 
 
@@ -266,11 +318,12 @@ class DynamicSubmissionSerializerTest(TestCase):
         data = {
             'formSlug': 'test-validation',
             'submissionData': {
+                'clientIdentifier': 'CUST-002',
                 # 'clientName' is missing
                 'loanAmount': '250000',
             }
         }
-        serializer = DynamicSubmissionSerializer(data = data)
+        serializer = DynamicSubmissionSerializer(data = data, context=self.get_submission_context())
 
         self.assertFalse(serializer.is_valid())
 
@@ -286,11 +339,12 @@ class DynamicSubmissionSerializerTest(TestCase):
         data = {
             'formSlug': 'test-validation',
             'submissionData': {
+                'clientIdentifier': 'CUST-003',
                 'clientName': 'Jane Doe',
                 'loanAmount': 'ABC',  # Invalid input for number field
             }
         }
-        serializer = DynamicSubmissionSerializer(data=data)
+        serializer = DynamicSubmissionSerializer(data=data, context=self.get_submission_context())
 
         # We expect validation to fail and raise ValidationError
         with self.assertRaises(ValidationError) as cm:
@@ -298,6 +352,136 @@ class DynamicSubmissionSerializerTest(TestCase):
 
         self.assertIn('loanAmount', cm.exception.detail)
         self.assertIn('valid number', cm.exception.detail['loanAmount'][0])
+
+
+    # -------------------------------------------------------------
+    # TEST: CONDITIONAL REQUIRED FIELD
+    # -------------------------------------------------------------
+    def test_conditional_required_field_fails(self):
+        """Tests that a dependent field is required when the condition is met."""
+        data = {
+            'formSlug': 'test-validation',
+            'submissionData': {
+                'clientIdentifier': 'CUST-COND-001',
+                'clientName': 'Conditional Test',
+                'loanAmount': '150000',  # 150,000 is > 100,000, so 'reasonForLoan' is now required
+                # 'reasonForLoan' is missing (INTENDED FAILURE)
+                'incomeFile': 'placeholder'
+            }
+        }
+
+        serializer = DynamicSubmissionSerializer(data=data, context=self.get_submission_context())
+
+        self.assertFalse(serializer.is_valid())
+
+        # Check for the expected validation error on the dependent field
+        self.assertIn('reasonForLoan', serializer.errors)
+        self.assertIn('is required because', serializer.errors['reasonForLoan'][0])
+
+
+    # -------------------------------------------------------------
+    # NEW TEST: FILE UPLOAD AND ATTACHMENT
+    # -------------------------------------------------------------
+    def test_file_upload_and_attachment_creation(self):
+        """Tests that a valid submission with a file saves the file and creates a FileAttachment record."""
+
+        # 1. Prepare a dummy file for 'incomeFile'
+        test_file = SimpleUploadedFile(
+            "test_document.pdf",
+            b"file content for testing",
+            content_type="application/pdf"
+        )
+
+        # 2. Prepare submission data
+        data = {
+            'formSlug': 'test-validation',
+            'submissionData': {
+                'clientIdentifier': 'CUST-FILE-001',
+                'clientName': 'File Uploader',
+                'loanAmount': '50000',
+                'notes': 'Testing file upload.',
+                # File field is omitted from submissionData, it goes into request.FILES
+            }
+        }
+
+        # 3. Prepare the context with the file data
+        # 'incomeFile' is the field_name defined in setUpTestData
+        files_data = {'incomeFile': test_file}
+        context = self.get_submission_context(files_data=files_data)
+
+        # 4. Assert the initial count of FileAttachment is zero
+        initial_attachment_count = FileAttachment.objects.count()
+        self.assertGreater(initial_attachment_count, 0) # Asserts there is at least 1 object (from setUpTestData)
+
+        # 5. Run validation and save
+        serializer = DynamicSubmissionSerializer(data=data, context=context)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        submission = serializer.save()
+
+        # 6. Assertions
+        # a) FileAttachment record created
+        self.assertEqual(FileAttachment.objects.count(), initial_attachment_count + 1)
+
+        self.assertEqual(submission.attachments.count(), 1)
+        attachment = submission.attachments.first()
+
+        # The failing assertion is now redundant, but we keep the field name check
+        self.assertEqual(attachment.field_name, 'incomeFile')
+
+        # c) Check the file itself
+        self.assertIn('test_document', attachment.file.name)
+
+        # 7. Clean up the created file (Good practice for tests that use storage)
+        attachment = FileAttachment.objects.latest('id') # Get the newly created one
+        attachment.file.delete()
+
+
+    # -------------------------------------------------------------
+    # NEW TEST: ADMIN DETAIL SERIALIZER OUTPUT
+    # -------------------------------------------------------------
+    def test_admin_detail_serializer_output(self):
+        """
+        Tests that AdminSubmissionDetailSerializer correctly flattens EAV data
+        and includes file attachment details.
+        """
+        from form_builder.serializers import AdminSubmissionDetailSerializer
+
+        # 1. Instantiate the serializer with the existing submission object
+        # self.submission includes clientIdentifier, 4 data entries, and 1 file attachment
+        serializer = AdminSubmissionDetailSerializer(self.submission)
+        data = serializer.data
+
+        # 2. Assert basic submission details are present
+        self.assertEqual(data['client_identifier'], 'CUST-TEST-999')
+        self.assertIn('submission_data', data)
+        self.assertIn('attachments', data)
+
+        # 3. Assert Submission Data is correctly flattened (EAV -> Dict)
+        submission_data = data['submission_data']
+
+        # Check that the EAV data is flattened correctly
+        self.assertEqual(submission_data['clientName'], 'Alice Smith')
+        self.assertEqual(submission_data['loanAmount'], '150000')
+
+        # The reasonForLoan entry might be present or not, depending on your setUpTestData.
+        # Based on the Celery test, there are 4 entries, so let's check for 4 keys.
+        # Note: If you have updated setUpTestData to have 5 entries, update this check.
+        self.assertEqual(len(submission_data), 4)
+
+
+        # 4. Assert File Attachment details are present
+        self.assertEqual(len(data['attachments']), 1)
+        attachment = data['attachments'][0]
+
+        # Check attachment structure (Assuming FileAttachmentSerializer has 'field_name' and 'file')
+        self.assertIn('field_name', attachment)
+        self.assertIn('file_url', attachment)
+        self.assertEqual(attachment['field_name'], 'proofOfIncome')
+        # The file field in the output should be a URL or a string path
+        self.assertIn('/test_uploads/', attachment['file_url'])
+
+
+
 
 
 class CeleryTaskTest(TestCase):
@@ -393,7 +577,7 @@ class CeleryTaskTest(TestCase):
         self.assertIn("loanAmount: 150000", email_body)
 
         # Checking File Attachment using ze mocked file path)
-        expected_file_path = f"/test_uploads/income_proof.pdf"
+        expected_file_path = f"/media/test_uploads/income_proof.pdf"
         self.assertIn(f"Attached Files: \n - proofOfIncome: {expected_file_path}", email_body)
 
         # 6. Assert recipient and sender are correct

@@ -25,6 +25,9 @@ class FormAdminViewSet(viewsets.ModelViewSet):
     serializer_class = FormSerializer
     lookup_field = 'slug'
 
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+
+
 # =========================================================
 # 2. Client API Views (Placeholder)
 # =========================================================

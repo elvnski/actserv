@@ -209,6 +209,10 @@ class DynamicSubmissionSerializer(serializers.Serializer):
 
             # 2. Storing non-file data
             for field_name, value in submissionDataToSave.items():
+
+                if field_name == 'clientIdentifier':
+                    continue
+
                 if value is not None and value != '':
                     SubmissionData.objects.create(
                         submission=submission,

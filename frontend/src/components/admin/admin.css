@@ -390,3 +390,65 @@
     gap: 10px; /* Space between links/buttons */
     align-items: center;
 }
+
+
+/* --- AdminSubmissionDetail.tsx Table Styles --- */
+
+.submission-table {
+    width: 100%;
+    border-collapse: collapse; /* Removes double borders */
+    margin-bottom: 30px;
+    background-color: #f9f9f9; /* Light background for the table body */
+    border: 1px solid #ddd;
+}
+
+.submission-table th,
+.submission-table td {
+    /* 🌟 Adequate padding for neatness 🌟 */
+    padding: 12px 15px;
+    text-align: left;
+    color: #333; /* Dark text for readability */
+}
+
+/* Style for the table header */
+.submission-table th {
+    background-color: #eef; /* Light blue header */
+    color: #1c3d5a; /* Dark text on header */
+    font-weight: bold;
+    border-bottom: 2px solid #ddd;
+}
+
+/* Optional: Add a subtle border between rows */
+.submission-table tbody tr {
+    border-bottom: 1px solid #eee;
+}
+
+/* Highlight rows on hover (optional) */
+.submission-table tbody tr:hover {
+    background-color: #e8e8e8;
+}
+
+/* Highlight the Field Name column */
+.submission-table tbody tr td:first-child {
+    font-weight: 600;
+    width: 30%; /* Gives more space to the value column */
+    color: #444;
+}
+
+/* Style for File Attachment List (improving the previous layout) */
+.file-attachment-list .file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    background-color: #fff;
+}
+
+.file-attachment-list .file-upload-date {
+    font-size: 0.85em;
+    color: #777;
+    margin-left: 15px;
+}

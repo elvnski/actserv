@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import './admin.css';
-
+import { useAdminAuth } from './context/AdminAuthContext.tsx';
 import type { AdminFormConfig } from '../../types.ts';
+import { useParams, useNavigate } from 'react-router-dom';
+
 
 const ADMIN_API_URL = 'http://127.0.0.1:8000/api/admin/forms/';
 
@@ -11,8 +13,17 @@ const FormList = () => {
     const [forms, setForms] = useState<AdminFormConfig[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const navigate = useNavigate();
+    const { logout, isAuthReady } = useAdminAuth();
+
 
     useEffect(() => {
+
+        if (!isAuthReady) {
+            // Keep loading state true while waiting for context
+            return;
+        }
+
         setLoading(true);
         axios.get<AdminFormConfig[]>(ADMIN_API_URL)
             .then(response => {
@@ -23,7 +34,7 @@ const FormList = () => {
                 setError("Failed to load forms list. Ensure the backend API is accessible.");
             })
             .finally(() => setLoading(false));
-    }, []);
+    }, [isAuthReady]);
 
     const handleDelete = (formSlug: string) => {
         if (window.confirm("Are you sure you want to delete this form template? This action cannot be undone.")) {
@@ -42,7 +53,7 @@ const FormList = () => {
         }
     };
 
-    if (loading) return <div className="admin-container">Loading Form Templates...</div>;
+    if (loading) return <div className="admin-container" style={{ color: 'black' }}>Loading Form Templates...</div>;
     if (error) return <div className="admin-container" style={{ color: 'red' }}>Error: {error}</div>;
 
     return (

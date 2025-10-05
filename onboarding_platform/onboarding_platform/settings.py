@@ -187,3 +187,9 @@ CELERY_BROKER_URL = 'redis://localhost:6379/0' # The URL for your message broker
 CELERY_RESULT_BACKEND = 'django-db' # Stores task results in the Django database
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
+
+
+# Define where Django should store user-uploaded files (relative to BASE_DIR)
+MEDIA_ROOT = BASE_DIR
+# Define the URL prefix for serving those files (how the browser accesses them)
+MEDIA_URL = '/media/'

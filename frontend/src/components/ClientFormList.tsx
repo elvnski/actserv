@@ -48,7 +48,7 @@ const ClientFormList = () => {
     if (loading) return (
         <div className="client-container">
             <h1 className="client-title">Available Forms</h1>
-            <p>Loading Forms...</p>
+            <p style={{ color: 'black' }}>Loading Forms...</p>
         </div>
     );
     if (error) return (

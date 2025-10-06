@@ -1,4 +1,4 @@
-# 📝 Django Dynamic Onboarding Platform
+# 📝 Django Dynamic Form Builder API
 
 This project implements a robust, dynamic form and submission management system using Django and Django REST Framework (DRF). The core design principle was **Form Follows Function**, leading to a primary focus on building an optimized and secure **backend architecture**. 
 

@@ -6,8 +6,9 @@ import FormList from "./components/admin/FormList.tsx";
 import ClientFormList from "./components/ClientFormList.tsx";
 import AdminSubmissionList from "./components/admin/AdminSubmissionList.tsx";
 import AdminSubmissionDetail from "./components/admin/AdminSubmissionDetail.tsx";
-import AdminLogin from "./components/admin/AdminLogin.tsx"; // <-- NEW
-import { useAdminAuth } from './components/admin/context/AdminAuthContext.tsx'; // <-- NEW
+import AdminLogin from "./components/admin/AdminLogin.tsx";
+import { useAdminAuth } from './components/admin/context/AdminAuthContext.tsx';
+import React, {useState, useEffect, JSX} from 'react';
 
 
 // Wrapper to grab the slug from the url

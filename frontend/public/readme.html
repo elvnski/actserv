@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Documentation | Actserv Assessment</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f7;
+            min-height: 100vh;
+        }
+        /* Custom gradient background for the hero section */
+        .hero-bg {
+            background: linear-gradient(135deg, #1f2937 0%, #064e3b 100%); /* Slate 800 to Emerald 900 */
+        }
+
+        /* === Markdown Styling to match the clean aesthetic === */
+        .markdown-body h1 {
+            font-size: 2.5em;
+            font-weight: 800;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 0.5em;
+            margin-top: 1.5em;
+            color: #1f2937;
+        }
+        .markdown-body h2 {
+            font-size: 2em;
+            font-weight: 700;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 0.3em;
+            margin-top: 2em;
+            color: #1f2937;
+        }
+        .markdown-body h3 {
+            font-size: 1.5em;
+            font-weight: 600;
+            margin-top: 1.5em;
+            color: #374151;
+        }
+        .markdown-body p, .markdown-body li {
+            line-height: 1.75;
+            color: #4b5563;
+        }
+        .markdown-body code {
+            background-color: #f3f4f6;
+            color: #c2410c; /* Amber for inline code */
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        .markdown-body pre {
+            background-color: #1f2937; /* Dark background for code blocks */
+            color: #e5e7eb;
+            padding: 1em;
+            overflow-x: auto;
+            border-radius: 6px;
+            margin-top: 1em;
+            margin-bottom: 1em;
+        }
+        .markdown-body table {
+            display: block;
+            overflow-x: auto;
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 1em;
+        }
+        .markdown-body th {
+            background-color: #064e3b; /* Dark green header */
+            color: white;
+            text-align: left;
+            font-weight: 600;
+        }
+        .markdown-body th, .markdown-body td {
+            padding: 10px 15px;
+            border: 1px solid #d1d5db;
+        }
+        .markdown-body tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body class="flex flex-col items-center">
+
+<div class="hero-bg text-white w-full py-16 px-4 sm:px-6 lg:px-8 shadow-2xl">
+    <div class="max-w-5xl mx-auto">
+        <h1 class="text-5xl lg:text-6xl font-extrabold tracking-tight mb-3">
+            README
+        </h1>
+        <p class="text-xl text-emerald-200 font-light mb-6">
+            Full Project Documentation and Technical Overview
+        </p>
+
+        <div class="space-x-4">
+            <a href="/onboarding.html" class="text-sm font-medium text-gray-300 hover:text-white transition duration-200">
+                ← Go to Landing Page
+            </a>
+            <span class="text-gray-500">|</span>
+            <a href="/admin/login" class="text-sm font-medium text-gray-300 hover:text-white transition duration-200">
+                Admin Login →
+            </a>
+        </div>
+    </div>
+</div>
+
+<main class="w-full max-w-8xl mx-auto p-4 md:p-8 lg:p-12">
+    <div id="markdown-content" class="bg-white p-8 rounded-xl shadow-2xl markdown-body border border-gray-100">
+        <p class="text-gray-500">Loading documentation...</p>
+    </div>
+</main>
+
+<div class="w-full max-w-5xl mx-auto p-4 text-center text-sm text-gray-500 mb-6">
+    &copy; 2024 Actserv Assessment Submission.
+</div>
+
+<script>
+    const readmeContainer = document.getElementById('markdown-content');
+    const readmePath = 'README.md';
+
+    fetch(readmePath)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Failed to load README.md: ${response.statusText}`);
+            }
+            return response.text();
+        })
+        .then(markdownText => {
+
+            const htmlContent = marked.parse(markdownText);
+            readmeContainer.innerHTML = htmlContent;
+        })
+        .catch(error => {
+            console.error('Error fetching or rendering Markdown:', error);
+            readmeContainer.innerHTML = `<p class="text-red-600">Error: Could not load the documentation. Please ensure ${readmePath} exists in the public/ folder.</p>`;
+        });
+</script>
+
+</body>
+</html>

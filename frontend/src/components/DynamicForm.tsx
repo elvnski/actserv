@@ -4,6 +4,7 @@ import type {FormSchema, FormField, FormData} from '../types';
 import './DynamicForm.css';
 import { useNavigate } from 'react-router-dom';
 import { CLIENT_FORM_DETAIL_ENDPOINT, CLIENT_SUBMISSION_ENDPOINT } from '../config/api.ts';
+import AdminAppLayout from './admin/AdminAppLayout.tsx';
 
 
 const DYNAMIC_SLUG_PLACEHOLDER=  'client-onboarding';
@@ -456,29 +457,43 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formSlug }) => {
     if (error && !schema) return <div className="error alert alert-danger">{error}</div>;
     if (!schema) return <div className="error alert alert-warning">Form "{slugToUse}" not found.</div>;
 
+    const navLinks = {
+        toForms: { to: '/client/forms', text: 'Go to Onboarding Forms' },
+        toLanding: { to: '/onboarding.html', text: 'Go to Landing Page', href: true},
+    };
+
+
     return (
 
-        <div className="dynamic-form container mt-5">
+        <AdminAppLayout
+            pageTitle={schema.name}
+            pageSubtitle={schema.description}
+            navLink1={navLinks.toForms}
+            navLink2={navLinks.toLanding}
+        >
 
-            <h1 style={{ color: '#1a1414' }}>{schema.name}</h1>
-            <p style={{ color: '#1a1414' }}>{schema.description}</p>
-            <hr />
+            <div className="dynamic-form container mt-5">
 
-            {submissionMessage && <div className="alert alert-success">{submissionMessage}</div>}
-            {error && <div className="alert alert-danger">{error}</div>} {/* This shows generic or non-field errors */}
+                {/*<h1 style={{ color: '#1a1414' }}>{schema.name}</h1>*/}
+                {/*<p style={{ color: '#1a1414' }}>{schema.description}</p>*/}
+                {/*<hr />*/}
 
-            <form onSubmit={handleSubmit} noValidate>
-                {schema.fields.map(renderField)}
+                {submissionMessage && <div className="alert alert-success">{submissionMessage}</div>}
+                {error && <div className="alert alert-danger">{error}</div>} {/* This shows generic or non-field errors */}
 
-                <button
-                    type="submit"
-                    className="btn btn-primary mt-4"
-                    disabled={!schema.fields.length}
-                >
-                    Submit Application
-                </button>
-            </form>
-        </div>
+                <form onSubmit={handleSubmit} noValidate>
+                    {schema.fields.map(renderField)}
+
+                    <button
+                        type="submit"
+                        className="btn btn-primary mt-4"
+                        disabled={!schema.fields.length}
+                    >
+                        Submit Application
+                    </button>
+                </form>
+            </div>
+        </AdminAppLayout>
     );
 
 };

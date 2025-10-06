@@ -3,6 +3,8 @@ import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import './admin.css';
 import { useAdminAuth } from './context/AdminAuthContext.tsx';
+import AdminAppLayout from './AdminAppLayout.tsx';
+
 
 
 // Define the interfaces for the detail data (matches AdminSubmissionDetailSerializer)
@@ -90,102 +92,127 @@ const AdminSubmissionDetail = () => {
     };
 
 
+    const handleLogout = () => {
+        logout();
+        navigate('/admin/login');
+    };
+
+    // Define navigation links for this specific page
+    const navLinks = {
+        toFormBuilder: { to: '/admin/forms', text: 'Manage Forms' },
+        toSubmissions: { to: '/admin/submissions', text: 'Go to Submissions Page' },
+    };
+
     return (
-        <div className="admin-container">
-            <header className="admin-header">
-                <h1 className="admin-title">Submission Review: #{submission.id}</h1>
-                <button onClick={() => navigate(-1)} className="btn-secondary"  style={{ marginLeft: '15px' }}>
-                    ← Back to List
-                </button>
-            </header>
 
-            {/* Submission Meta Data - Kept as divs for flexibility */}
-            <div className="submission-meta-group">
-                <p style={{ color: 'black' }}><strong>Form:</strong> {submission.form_name}</p>
-                <p style={{ color: 'black' }}><strong>Submitted:</strong> {formatDateTime(submission.submission_date)}</p>
-                <p style={{ color: 'black' }}><strong>Client ID:</strong> {submission.client_identifier || 'Not Provided'}</p>
-                <p style={{ color: 'black' }}><strong>Admin Notified: </strong>
-                    <span className={`status-badge ${submission.is_notified ? 'status-success' : 'status-pending'}`}>
-                        {submission.is_notified ? 'Yes' : 'No'}
-                    </span>
-                </p>
-            </div>
+        <AdminAppLayout
+            pageTitle={`Submission #${submission.id} of form '${submission.form_name}'`}
+            pageSubtitle="View form entries & submitted files."
+            navLink1={navLinks.toFormBuilder}
+            navLink2={navLinks.toSubmissions}
+            actionButton={{
+                text: 'Log Out',
+                onClick: handleLogout
+            }}
+        >
 
-            {/* 🌟 START: Structured Table for Form Data 🌟 */}
-            <h2 className="section-title">Submitted Form Data</h2>
+            <div className="admin-container">
+                {/*<header className="admin-header">*/}
+                {/*    <h1 className="admin-title">Submission Review: #{submission.id}</h1>*/}
+                {/*    <button onClick={() => navigate(-1)} className="btn-secondary"  style={{ marginLeft: '15px' }}>*/}
+                {/*        ← Back to List*/}
+                {/*    </button>*/}
+                {/*</header>*/}
 
-            {Object.entries(submission.submission_data).length > 0 ? (
-                // Add a class 'submission-table' for styling in admin.css
-                <table className="submission-table">
-                    <thead>
-                    <tr>
-                        <th>Field Name</th>
-                        <th>Submitted Value</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {Object.entries(submission.submission_data).map(([key, value]) => (
-                        <tr key={key}>
-                            <td>{formatFieldName(key)}</td>
-                            <td>{value}</td>
+                {/* Submission Meta Data - Kept as divs for flexibility */}
+                <div className="submission-meta-group">
+                    <p style={{ color: 'black' }}><strong>Form:</strong> {submission.form_name}</p>
+                    <p style={{ color: 'black' }}><strong>Submitted:</strong> {formatDateTime(submission.submission_date)}</p>
+                    <p style={{ color: 'black' }}><strong>Client ID:</strong> {submission.client_identifier || 'Not Provided'}</p>
+                    <p style={{ color: 'black' }}><strong>Admin Notified: </strong>
+                        <span className={`status-badge ${submission.is_notified ? 'status-success' : 'status-pending'}`}>
+                            {submission.is_notified ? 'Yes' : 'No'}
+                        </span>
+                    </p>
+                </div>
+
+                {/* 🌟 START: Structured Table for Form Data 🌟 */}
+                <h2 className="section-title">Submitted Form Data</h2>
+
+                {Object.entries(submission.submission_data).length > 0 ? (
+                    // Add a class 'submission-table' for styling in admin.css
+                    <table className="submission-table">
+                        <thead>
+                        <tr>
+                            <th>Field Name</th>
+                            <th>Submitted Value</th>
                         </tr>
-                    ))}
-                    </tbody>
-                </table>
-            ) : (
-                <p>No standard form data recorded.</p>
-            )}
-            {/* 🌟 END: Structured Table for Form Data 🌟 */}
-
-            <h2 className="section-title">File Attachments</h2>
-
-            {submission.attachments.length > 0 ? (
-                // We reuse the 'submission-table' class for consistent styling
-                <table className="submission-table file-attachments-table">
-                    <thead>
-                    <tr>
-                        <th>Field Name</th>
-                        <th>File Name / Uploaded Date</th>
-                        <th style={{ width: '150px', textAlign: 'center' }}>Action</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {submission.attachments.map(file => {
-                        // Extract just the file name from the URL for a cleaner display
-                        // The URL structure is likely: /media/form_uploads/filename.jpg
-                        const urlParts = file.file_url.split('/');
-                        const fileName = urlParts[urlParts.length - 1];
-
-                        return (
-                            <tr key={file.file_url}>
-                                <td>{formatFieldName(file.field_name)}</td>
-                                <td>
-                                    <p style={{ margin: 0, fontWeight: 'bold' }}>{fileName}</p>
-                                    <span style={{ fontSize: '0.9em', color: '#777' }}>
-                                Uploaded: {formatDateTime(file.uploaded_at)}
-                            </span>
-                                </td>
-                                <td style={{ textAlign: 'center' }}>
-                                    <a
-                                        href={file.file_url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="btn-secondary btn-sm"
-                                        // Note: Changed to btn-secondary for visual contrast with btn-primary table header
-                                    >
-                                        Download
-                                    </a>
-                                </td>
+                        </thead>
+                        <tbody>
+                        {Object.entries(submission.submission_data).map(([key, value]) => (
+                            <tr key={key}>
+                                <td>{formatFieldName(key)}</td>
+                                <td>{value}</td>
                             </tr>
-                        );
-                    })}
-                    </tbody>
-                </table>
-            ) : (
-                <p style={{ color: 'orange' }}>No files were attached to this submission.</p>
-            )}
+                        ))}
+                        </tbody>
+                    </table>
+                ) : (
+                    <p>No standard form data recorded.</p>
+                )}
+                {/* 🌟 END: Structured Table for Form Data 🌟 */}
 
-        </div>
+                <h2 className="section-title">File Attachments</h2>
+
+                {submission.attachments.length > 0 ? (
+                    // We reuse the 'submission-table' class for consistent styling
+                    <table className="submission-table file-attachments-table">
+                        <thead>
+                        <tr>
+                            <th>Field Name</th>
+                            <th>File Name / Uploaded Date</th>
+                            <th style={{ width: '150px', textAlign: 'center' }}>Action</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {submission.attachments.map(file => {
+                            // Extract just the file name from the URL for a cleaner display
+                            // The URL structure is likely: /media/form_uploads/filename.jpg
+                            const urlParts = file.file_url.split('/');
+                            const fileName = urlParts[urlParts.length - 1];
+
+                            return (
+                                <tr key={file.file_url}>
+                                    <td>{formatFieldName(file.field_name)}</td>
+                                    <td>
+                                        <p style={{ margin: 0, fontWeight: 'bold' }}>{fileName}</p>
+                                        <span style={{ fontSize: '0.9em', color: '#777' }}>
+                                    Uploaded: {formatDateTime(file.uploaded_at)}
+                                </span>
+                                    </td>
+                                    <td style={{ textAlign: 'center' }}>
+                                        <a
+                                            href={file.file_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="btn-secondary btn-sm"
+                                            // Note: Changed to btn-secondary for visual contrast with btn-primary table header
+                                        >
+                                            Download
+                                        </a>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                        </tbody>
+                    </table>
+                ) : (
+                    <p style={{ color: 'orange' }}>No files were attached to this submission.</p>
+                )}
+
+            </div>
+        </AdminAppLayout>
+
     );
 };
 

@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import './admin.css';
 import { useAdminAuth } from './context/AdminAuthContext.tsx';
+import AdminAppLayout from './AdminAppLayout.tsx';
 
 // 🌟 New Imports for TanStack Table 🌟
 import {
@@ -228,134 +229,153 @@ const AdminSubmissionList = () => {
         navigate('/admin/login');
     };
 
+    // Define navigation links for this specific page
+    const navLinks = {
+        toFormBuilder: { to: '/admin/forms', text: 'Manage Forms' },
+        toLanding: { to: '/onboarding.html', text: 'Go to Landing Page', href: true},
+    };
+
     // ------------------------------------------------
     // 5. COMPONENT RENDER
     // ------------------------------------------------
 
     return (
-        <div className="admin-container">
 
-            <nav className="admin-nav">
-                <Link to="/admin/forms" className="btn-secondary btn-sm" style={{marginRight: '10px'}}>
-                    Form Builder
-                </Link>
-                <button onClick={handleLogout} className="btn-danger btn-sm">
-                    Logout
-                </button>
-            </nav>
+        <AdminAppLayout
+            pageTitle="Onboarding Submissions"
+            pageSubtitle="View, filter, and detail all client form submissions."
+            navLink1={navLinks.toFormBuilder}
+            navLink2={navLinks.toLanding}
+            actionButton={{
+                text: 'Log Out',
+                onClick: handleLogout
+            }}
+        >
 
+            <div className="admin-container">
 
-            <h1>Form Submissions List</h1>
-
-
-            {/* Loading/Error State */}
-            {isLoading && <p>Loading submissions...</p>}
-            {error && <p className="error-message">{error}</p>}
-
-
-            {/* 🌟 Search Input Field 🌟 */}
-            <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-end' }}>
-                <input
-                    type="text"
-                    placeholder="Search by Client ID or Form Name..."
-                    value={globalFilter ?? ''}
-                    onChange={e => table.setGlobalFilter(e.target.value)}
-                    style={{
-                        padding: '8px 12px',
-                        borderRadius: '4px',
-                        backgroundColor: 'white', // White background
-                        border: '1px solid #343a40', // Border matching header color
-                        color: '#343a40', // Text matching header color
-                        width: '300px'
-                    }}
-                />
-            </div>
-
-            {/* Loading/Error State */}
-            {isLoading && <p>Loading submissions...</p>}
-            {error && <p className="error-message">{error}</p>}
+                {/*<nav className="admin-nav">*/}
+                {/*    <Link to="/admin/forms" className="btn-secondary btn-sm" style={{marginRight: '10px'}}>*/}
+                {/*        Form Builder*/}
+                {/*    </Link>*/}
+                {/*    <button onClick={handleLogout} className="btn-danger btn-sm">*/}
+                {/*        Logout*/}
+                {/*    </button>*/}
+                {/*</nav>*/}
 
 
-            {/* Render Table when data is available */}
-            {!isLoading && !error && (
-                <>
-                    <div className="table-responsive">
-                        <table className="custom-table">
-                            {/* ... (Existing Table Header and Body logic, unchanged) ... */}
-                            <thead>
-                            {table.getHeaderGroups().map(headerGroup => (
-                                <tr key={headerGroup.id}>
-                                    {headerGroup.headers.map(header => (
-                                        <th
-                                            key={header.id}
-                                            colSpan={header.colSpan}
-                                            onClick={header.column.getToggleSortingHandler()}
-                                            className={header.column.getCanSort() ? 'cursor-pointer' : ''}
-                                        >
-                                            {header.isPlaceholder ? null : (
-                                                <>
-                                                    {flexRender(
-                                                        header.column.columnDef.header,
-                                                        header.getContext()
-                                                    )}
-                                                    {{
-                                                        asc: ' 🔼',
-                                                        desc: ' 🔽',
-                                                    }[header.column.getIsSorted() as string] ?? null}
-                                                </>
-                                            )}
-                                        </th>
-                                    ))}
-                                </tr>
-                            ))}
-                            </thead>
-                            <tbody>
-                            {table.getRowModel().rows.map(row => (
-                                <tr key={row.id}>
-                                    {row.getVisibleCells().map(cell => (
-                                        <td key={cell.id} style={{ color: 'black' }}>
-                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                        </td>
-                                    ))}
-                                </tr>
-                            ))}
-                            </tbody>
-                        </table>
-                    </div>
+                {/*<h1>Form Submissions List</h1>*/}
 
-                    {/* 🌟 NEW: Pagination Controls 🌟 */}
-                    <div className="pagination-controls" style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
 
-                        {/* Status Message */}
-                        <span>
-                            Page {table.getState().pagination.pageIndex + 1} of {dataMeta.totalPages} (Total {dataMeta.totalRows} Submissions)
-                        </span>
+                {/* Loading/Error State */}
+                {isLoading && <p>Loading submissions...</p>}
+                {error && <p className="error-message">{error}</p>}
 
-                        {/* Buttons */}
-                        <div style={{ display: 'flex', gap: '10px' }}>
-                            <button
-                                onClick={() => table.previousPage()}
-                                disabled={!table.getCanPreviousPage()}
-                                className="btn-secondary"
-                            >
-                                Previous Page
-                            </button>
-                            <button
-                                onClick={() => table.nextPage()}
-                                disabled={!table.getCanNextPage()}
-                                className="btn-secondary"
-                            >
-                                Next Page
-                            </button>
+
+                {/* 🌟 Search Input Field 🌟 */}
+                <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-end' }}>
+                    <input
+                        type="text"
+                        placeholder="Search by Client ID or Form Name..."
+                        value={globalFilter ?? ''}
+                        onChange={e => table.setGlobalFilter(e.target.value)}
+                        style={{
+                            padding: '8px 12px',
+                            borderRadius: '4px',
+                            backgroundColor: 'white', // White background
+                            border: '1px solid #343a40', // Border matching header color
+                            color: '#343a40', // Text matching header color
+                            width: '300px'
+                        }}
+                    />
+                </div>
+
+                {/* Loading/Error State */}
+                {isLoading && <p>Loading submissions...</p>}
+                {error && <p className="error-message">{error}</p>}
+
+
+                {/* Render Table when data is available */}
+                {!isLoading && !error && (
+                    <>
+                        <div className="table-responsive">
+                            <table className="custom-table">
+                                {/* ... (Existing Table Header and Body logic, unchanged) ... */}
+                                <thead>
+                                {table.getHeaderGroups().map(headerGroup => (
+                                    <tr key={headerGroup.id}>
+                                        {headerGroup.headers.map(header => (
+                                            <th
+                                                key={header.id}
+                                                colSpan={header.colSpan}
+                                                onClick={header.column.getToggleSortingHandler()}
+                                                className={header.column.getCanSort() ? 'cursor-pointer' : ''}
+                                            >
+                                                {header.isPlaceholder ? null : (
+                                                    <>
+                                                        {flexRender(
+                                                            header.column.columnDef.header,
+                                                            header.getContext()
+                                                        )}
+                                                        {{
+                                                            asc: ' 🔼',
+                                                            desc: ' 🔽',
+                                                        }[header.column.getIsSorted() as string] ?? null}
+                                                    </>
+                                                )}
+                                            </th>
+                                        ))}
+                                    </tr>
+                                ))}
+                                </thead>
+                                <tbody>
+                                {table.getRowModel().rows.map(row => (
+                                    <tr key={row.id}>
+                                        {row.getVisibleCells().map(cell => (
+                                            <td key={cell.id} style={{ color: 'black' }}>
+                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                            </td>
+                                        ))}
+                                    </tr>
+                                ))}
+                                </tbody>
+                            </table>
                         </div>
-                    </div>
-                </>
-            )}
 
-            {!isLoading && !error && submissions.length === 0 && (
-                <p>No submissions found.</p>
-            )}
-        </div>
+                        {/* 🌟 NEW: Pagination Controls 🌟 */}
+                        <div className="pagination-controls" style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+
+                            {/* Status Message */}
+                            <span>
+                                Page {table.getState().pagination.pageIndex + 1} of {dataMeta.totalPages} (Total {dataMeta.totalRows} Submissions)
+                            </span>
+
+                            {/* Buttons */}
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                                <button
+                                    onClick={() => table.previousPage()}
+                                    disabled={!table.getCanPreviousPage()}
+                                    className="btn-secondary"
+                                >
+                                    Previous Page
+                                </button>
+                                <button
+                                    onClick={() => table.nextPage()}
+                                    disabled={!table.getCanNextPage()}
+                                    className="btn-secondary"
+                                >
+                                    Next Page
+                                </button>
+                            </div>
+                        </div>
+                    </>
+                )}
+
+                {!isLoading && !error && submissions.length === 0 && (
+                    <p>No submissions found.</p>
+                )}
+            </div>
+        </AdminAppLayout>
     );
 };
 

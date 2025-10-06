@@ -5,6 +5,7 @@ import './admin.css';
 import { useAdminAuth } from './context/AdminAuthContext.tsx';
 import type { AdminFormConfig } from '../../types.ts';
 import { useParams, useNavigate } from 'react-router-dom';
+import AdminAppLayout from './AdminAppLayout.tsx';
 
 
 const ADMIN_API_URL = 'http://127.0.0.1:8000/api/admin/forms/';
@@ -61,90 +62,111 @@ const FormList = () => {
         navigate('/admin/login');
     };
 
+    // Define navigation links for this specific page
+    const navLinks = {
+        toFormBuilder: { to: '/admin/forms', text: 'Manage Forms' },
+        toSubmissions: { to: '/admin/submissions', text: 'Go to Submissions Page' },
+    };
+
+
     return (
-        <div className="admin-container">
 
-            <nav className="admin-nav">
-                <Link to="/admin/submissions" className="btn-secondary btn-sm" style={{marginRight: '10px'}}>
-                    Form Submissions
+        <AdminAppLayout
+            pageTitle="Form Templates Administration"
+            pageSubtitle="Manage your onboarding form templates."
+            navLink1={navLinks.toFormBuilder}
+            navLink2={navLinks.toSubmissions}
+            actionButton={{
+                text: 'Log Out',
+                onClick: handleLogout
+            }}
+        >
+
+            <div className="admin-container">
+
+                {/*<nav className="admin-nav">*/}
+                {/*    <Link to="/admin/submissions" className="btn-secondary btn-sm" style={{marginRight: '10px'}}>*/}
+                {/*        Form Submissions*/}
+                {/*    </Link>*/}
+                {/*    <button onClick={handleLogout} className="btn-danger btn-sm">*/}
+                {/*        Logout*/}
+                {/*    </button>*/}
+                {/*</nav>*/}
+
+
+                {/*<header className="admin-header">*/}
+                {/*    <h1 className="admin-title">Form Templates Administration</h1>*/}
+                {/*</header>*/}
+
+                <Link
+                    to="/admin/forms/new"
+                    className="btn-primary"
+                >
+                    + Create New Form
                 </Link>
-                <button onClick={handleLogout} className="btn-danger btn-sm">
-                    Logout
-                </button>
-            </nav>
 
-
-            <header className="admin-header">
-                <h1 className="admin-title">Form Templates Administration</h1>
-            </header>
-
-            <Link
-                to="/admin/forms/new"
-                className="btn-primary"
-            >
-                + Create New Form
-            </Link>
-
-            {forms.length === 0 ? (
-                <div className="admin-table-wrapper" style={{ padding: '20px', textAlign: 'center', marginBottom: '30px' }}>
-                    <p style={{ color: '#666' }}>No form templates found. Click 'Create New Form' to begin.</p>
-                </div>
-            ) : (
-                <div className="admin-table-wrapper">
-                    <table className="admin-table">
-                        <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Slug (Client URL)</th>
-                            <th>Status</th>
-                            <th style={{ textAlign: 'right' }}>Actions</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {forms.map((form) => (
-                            <tr key={form.id}>
-                                <td>
-                                    <span style={{ color: "black"}}>
-                                        {form.id}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span style={{ color: "black"}}>
-                                        {form.name}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span style={{ color: "black"}}>
-                                        {form.slug}
-                                    </span>
-                                </td>
-                                <td>
-                                        <span className={form.is_active ? 'status-active' : 'status-inactive'}>
-                                            {form.is_active ? 'Active' : 'Inactive'}
-                                        </span>
-                                </td>
-                                <td style={{ textAlign: 'right' }}>
-                                    <Link
-                                        to={`/admin/forms/edit/${form.slug}`}
-                                        className="btn-secondary btn-sm"
-                                    >
-                                        Edit
-                                    </Link>
-                                    <button
-                                        onClick={() => form.id && handleDelete(form.slug)}
-                                        className="btn-danger btn-sm"
-                                    >
-                                        Delete
-                                    </button>
-                                </td>
+                {forms.length === 0 ? (
+                    <div className="admin-table-wrapper" style={{ padding: '20px', textAlign: 'center', marginBottom: '30px' }}>
+                        <p style={{ color: '#666' }}>No form templates found. Click 'Create New Form' to begin.</p>
+                    </div>
+                ) : (
+                    <div className="admin-table-wrapper">
+                        <table className="admin-table">
+                            <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Slug (Client URL)</th>
+                                <th>Status</th>
+                                <th style={{ textAlign: 'right' }}>Actions</th>
                             </tr>
-                        ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-        </div>
+                            </thead>
+                            <tbody>
+                            {forms.map((form) => (
+                                <tr key={form.id}>
+                                    <td>
+                                        <span style={{ color: "black"}}>
+                                            {form.id}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span style={{ color: "black"}}>
+                                            {form.name}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span style={{ color: "black"}}>
+                                            {form.slug}
+                                        </span>
+                                    </td>
+                                    <td>
+                                            <span className={form.is_active ? 'status-active' : 'status-inactive'}>
+                                                {form.is_active ? 'Active' : 'Inactive'}
+                                            </span>
+                                    </td>
+                                    <td style={{ textAlign: 'right' }}>
+                                        <Link
+                                            to={`/admin/forms/edit/${form.slug}`}
+                                            className="btn-secondary btn-sm"
+                                        >
+                                            Edit
+                                        </Link>
+                                        <button
+                                            onClick={() => form.id && handleDelete(form.slug)}
+                                            className="btn-danger btn-sm"
+                                        >
+                                            Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+        </AdminAppLayout>
+
     );
 };
 

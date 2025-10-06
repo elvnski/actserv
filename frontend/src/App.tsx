@@ -27,6 +27,18 @@ const AdminAuthGuard: React.FC = () => {
 };
 
 
+// 🌟 NEW: Component to handle the external redirect 🌟
+const OnboardingRedirect = () => {
+    // This hook runs once when the component mounts
+    useEffect(() => {
+        // This performs a standard browser navigation, bypassing React Router
+        window.location.replace('/onboarding.html');
+    }, []);
+
+    // Render nothing while waiting for the redirect
+    return null;
+};
+
 function App() {
 
     return (
@@ -35,6 +47,7 @@ function App() {
             <div className="App">
 
                 <Routes>
+                    <Route path="/" element={<OnboardingRedirect />} />
 
                     {/* --- Client/Public Routes --- */}
                     <Route path="/" element={<div className="container mt-5"><h2>Welcome! Navigate to /form/[your-slug]</h2></div>} />

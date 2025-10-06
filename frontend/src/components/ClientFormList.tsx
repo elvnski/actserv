@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import './client.css';
+import AdminAppLayout from './admin/AdminAppLayout.tsx';
 
 
 const CLIENT_API_URL = 'http://127.0.0.1:8000/api/client/forms/';
@@ -45,57 +46,93 @@ const ClientFormList = () => {
             .finally(() => setLoading(false));
     }, []);
 
+
+    const navLinks = {
+        toForms: { to: '/client/forms', text: 'Go to Onboarding Forms' },
+        toLanding: { to: '/onboarding.html', text: 'Go to Landing Page', href: true},
+    };
+
+
     if (loading) return (
-        <div className="client-container">
-            <h1 className="client-title">Available Forms</h1>
-            <p style={{ color: 'black' }}>Loading Forms...</p>
-        </div>
+
+        <AdminAppLayout
+            pageTitle="Available Onboarding Forms"
+            pageSubtitle="Select a form below to begin your onboarding submissions."
+            navLink1={navLinks.toForms}
+            navLink2={navLinks.toLanding}
+        >
+
+            <div className="client-container">
+                <h1 className="client-title">Available Forms</h1>
+                <p style={{ color: 'black' }}>Loading Forms...</p>
+            </div>
+        </AdminAppLayout>
     );
+
     if (error) return (
-        <div className="client-container">
-            <h1 className="client-title">Available Forms</h1>
-            <p className="alert-danger">Error: {error}</p>
-        </div>
+
+        <AdminAppLayout
+            pageTitle="Available Onboarding Forms"
+            pageSubtitle="Select a form below to begin your onboarding submissions."
+            navLink1={navLinks.toForms}
+            navLink2={navLinks.toLanding}
+        >
+
+            <div className="client-container">
+                <h1 className="client-title">Available Forms</h1>
+                <p className="alert-danger">Error: {error}</p>
+            </div>
+        </AdminAppLayout>
     );
 
     return (
-        <div className="client-container client-form-list">
-            <h1 className="client-title">Available Onboarding Forms</h1>
-            <p className="client-subtitle">Select a form below to begin your submission.</p>
 
-            {forms.length === 0 ? (
-                <div className="no-forms">
-                    <p>No active forms are currently available. Please check back later.</p>
-                </div>
-            ) : (
-                <ul className="form-list">
-                    {forms.map(form => {
-                        const isCompleted = completedSlugs.includes(form.slug);
+        <AdminAppLayout
+            pageTitle="Available Onboarding Forms"
+            pageSubtitle="Select a form below to begin your onboarding submissions."
+            navLink1={navLinks.toForms}
+            navLink2={navLinks.toLanding}
+        >
 
-                        return (
-                            <li key={form.slug} className={`form-list-item ${isCompleted ? 'completed' : ''}`}>
-                                <div className="form-details">
-                                    <h3 className="form-name">{form.name}</h3>
-                                    <p className="form-description">{form.description}</p>
-                                </div>
-                                <div className="form-action">
-                                    {isCompleted ? (
-                                        <span className="status-completed">Completed ✅</span>
-                                    ) : (
-                                        <Link
-                                            to={`/form/${form.slug}`}
-                                            className="btn-primary"
-                                        >
-                                            Start Form →
-                                        </Link>
-                                    )}
-                                </div>
-                            </li>
-                        );
-                    })}
-                </ul>
-            )}
-        </div>
+            <div className="client-container client-form-list">
+                {/*<h1 className="client-title">Available Onboarding Forms</h1>*/}
+                {/*<p className="client-subtitle">Select a form below to begin your submission.</p>*/}
+
+                {forms.length === 0 ? (
+                    <div className="no-forms">
+                        <p>No active forms are currently available. Please check back later.</p>
+                    </div>
+                ) : (
+                    <ul className="form-list">
+                        {forms.map(form => {
+                            const isCompleted = completedSlugs.includes(form.slug);
+
+                            return (
+                                <li key={form.slug} className={`form-list-item ${isCompleted ? 'completed' : ''}`}>
+                                    <div className="form-details">
+                                        <h3 className="form-name">{form.name}</h3>
+                                        <p className="form-description">{form.description}</p>
+                                    </div>
+                                    <div className="form-action">
+                                        {isCompleted ? (
+                                            <span className="status-completed">Completed ✅</span>
+                                        ) : (
+                                            <Link
+                                                to={`/form/${form.slug}`}
+                                                className="btn-primary"
+                                            >
+                                                Start Form →
+                                            </Link>
+                                        )}
+                                    </div>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                )}
+            </div>
+        </AdminAppLayout>
+
     );
 };
 

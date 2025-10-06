@@ -5,6 +5,8 @@ import type { FormSchema, FormField } from '../../types.ts';
 import './admin.css';
 import { useAdminAuth } from './context/AdminAuthContext.tsx';
 import { Link } from 'react-router-dom';
+import AdminAppLayout from './AdminAppLayout.tsx';
+
 
 const ADMIN_API_URL = 'http://127.0.0.1:8000/api/admin/forms/';
 
@@ -428,163 +430,165 @@ const AdminFormBuilder = () => {
         navigate('/admin/login');
     };
 
+    // Define navigation links for this specific page
+    const navLinks = {
+        toLanding: { to: '/onboarding.html', text: 'Go to Landing Page', href: true},
+        toSubmissions: { to: '/admin/submissions', text: 'Go to Submissions Page' },
+    };
+
+
     // --- 6. Main Render ---
     return (
-        // 2. Apply admin-container
-        <form onSubmit={handleSubmit} className="admin-container">
 
-            <nav className="admin-nav">
-                <Link to="/admin/submissions" className="btn-secondary btn-sm" style={{marginRight: '10px'}}>
-                    Form Submissions
-                </Link>
-                <Link to="/admin/forms" className="btn-secondary btn-sm" style={{marginRight: '10px'}}>
-                    Form Builder
-                </Link>
-                <button onClick={handleLogout} className="btn-danger btn-sm">
-                    Logout
-                </button>
-            </nav>
+        <AdminAppLayout
+            pageTitle={isEditMode ? `Edit Form: ${formName}` : 'Create New Form Template'}
+            pageSubtitle={isEditMode ? `Editing: '${formName}' Template` : 'Create New Template'}
+            navLink1={navLinks.toLanding}
+            navLink2={navLinks.toSubmissions}
+            actionButton={{
+                text: 'Log Out',
+                onClick: handleLogout
+            }}
+        >
 
-            <header className="admin-header">
-                <h1 className="admin-title">
-                    {isEditMode ? `Edit Form: ${formName}` : 'Create New Form Template'}
-                </h1>
+            <form onSubmit={handleSubmit} className="admin-container">
 
-            </header>
 
-            {error && <div className="alert-danger" style={{ marginBottom: '20px', padding: '10px' }}>{error}</div>}
+                {error && <div className="alert-danger" style={{ marginBottom: '20px', padding: '10px' }}>{error}</div>}
 
-            <div className="form-meta-group">
-                <div className="form-group-builder">
-                    <label className="form-label">Name:</label>
-                    <input
-                        type="text"
-                        name="name"
-                        value={formName}
-                        onChange={handleFormMetaChange}
-                        className="form-input"
-                        required
-                    />
-                </div>
-                <div className="form-group-builder">
-                    <label className="form-label">Slug (Client URL):</label>
-                    <input
-                        type="text"
-                        name="slug"
-                        value={formSlug}
-                        onChange={handleFormMetaChange}
-                        className="form-input"
-                        required
-                    />
-                </div>
-                <div className="form-group-builder">
-                    <label className="form-label">Description (Optional):</label>
-                    <textarea
-                        name="description"
-                        value={formDescription}
-                        onChange={handleFormMetaChange}
-                        className="form-input"
-                        rows={3}
-                    />
-                </div>
-
-                {isEditMode && (
-                    <div className="form-group-builder is-active-check">
-                        <label className="form-label">
-                            {isActive ? 'Form is Active' : 'Form is Deactivated'}
-                        </label>
+                <div className="form-meta-group">
+                    <div className="form-group-builder">
+                        <label className="form-label">Name:</label>
                         <input
-                            type="checkbox"
-                            checked={isActive}
-                            onChange={handleActiveToggle}
-                            className="form-checkbox"
-                            title="Activate or Deactivate this form."
+                            type="text"
+                            name="name"
+                            value={formName}
+                            onChange={handleFormMetaChange}
+                            className="form-input"
+                            required
                         />
                     </div>
-                )}
-
-            </div>
-
-            {/* --- Field Builder Section --- */}
-            <h2 className="section-title">Form Fields</h2>
-
-            <div className="field-list-wrapper">
-                {fields.map((field, index) => (
-                    <div key={field.id} className="field-card">
-                        {/* Field Header/Actions */}
-                        <div className="field-header">
-                            <h3 className="field-title">{field.label || `Field ${index + 1}`}</h3>
-                            <div className="field-actions">
-                                <button type="button" onClick={() => handleMoveField(index, 'up')} disabled={index === 0} className="btn-move">↑</button>
-                                <button type="button" onClick={() => handleMoveField(index, 'down')} disabled={index === fields.length - 1} className="btn-move">↓</button>
-                                <button type="button" onClick={() => handleRemoveField(index)} className="btn-danger btn-sm">Remove</button>
-                            </div>
-                        </div>
-
-                        {/* Field Properties */}
-                        <div className="field-properties-row">
-                            <div className="form-group-builder property-group">
-                                <label className="form-label">Label:</label>
-                                <input
-                                    type="text"
-                                    value={field.label}
-                                    onChange={(e) => handleFieldChange(index, 'label', e.target.value)}
-                                    className="form-input"
-                                />
-                            </div>
-                            <div className="form-group-builder property-group">
-                                <label className="form-label">Type:</label>
-                                <select
-                                    value={field.field_type}
-                                    onChange={(e) => handleFieldChange(index, 'field_type', e.target.value as FormField['field_type'])}
-                                    className="form-select"
-                                >
-                                    {['text', 'number', 'email', 'date', 'dropdown', 'file_upload', 'checkbox'].map(type => (
-                                        <option key={type} value={type}>{type}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="form-group-builder property-group is-required-check">
-                                <label className="form-label">Required:</label>
-                                <input
-                                    type="checkbox"
-                                    checked={field.is_required}
-                                    onChange={(e) => handleFieldChange(index, 'is_required', e.target.checked)}
-                                    className="form-checkbox"
-                                />
-                            </div>
-                            <div className="form-group-builder property-group">
-                                <label className="form-label">Field Name (Key):</label>
-                                <input
-                                    type="text"
-                                    value={field.field_name}
-                                    onChange={(e) => handleFieldChange(index, 'field_name', e.target.value)}
-                                    className="form-input"
-                                    placeholder="client_name"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Field Configuration (Dropdown Options, etc.) */}
-                        {renderConfigEditor(field, index)}
+                    <div className="form-group-builder">
+                        <label className="form-label">Slug (Client URL):</label>
+                        <input
+                            type="text"
+                            name="slug"
+                            value={formSlug}
+                            onChange={handleFormMetaChange}
+                            className="form-input"
+                            required
+                        />
                     </div>
-                ))}
-            </div>
+                    <div className="form-group-builder">
+                        <label className="form-label">Description (Optional):</label>
+                        <textarea
+                            name="description"
+                            value={formDescription}
+                            onChange={handleFormMetaChange}
+                            className="form-input"
+                            rows={3}
+                        />
+                    </div>
 
-            <button type="button" onClick={handleAddField} className="btn-secondary btn-add-field">
-                + Add New Field
-            </button>
+                    {isEditMode && (
+                        <div className="form-group-builder is-active-check">
+                            <label className="form-label">
+                                {isActive ? 'Form is Active' : 'Form is Deactivated'}
+                            </label>
+                            <input
+                                type="checkbox"
+                                checked={isActive}
+                                onChange={handleActiveToggle}
+                                className="form-checkbox"
+                                title="Activate or Deactivate this form."
+                            />
+                        </div>
+                    )}
 
-            <div style={{ marginTop: '25px', textAlign: 'center' }}>
-                <button
-                    type="submit"
-                    className="btn-primary"
-                    disabled={isLoading}
-                >
-                    {isLoading ? 'Saving...' : 'Save Form Template'}
+                </div>
+
+                {/* --- Field Builder Section --- */}
+                <h2 className="section-title">Form Fields</h2>
+
+                <div className="field-list-wrapper">
+                    {fields.map((field, index) => (
+                        <div key={field.id} className="field-card">
+                            {/* Field Header/Actions */}
+                            <div className="field-header">
+                                <h3 className="field-title">{field.label || `Field ${index + 1}`}</h3>
+                                <div className="field-actions">
+                                    <button type="button" onClick={() => handleMoveField(index, 'up')} disabled={index === 0} className="btn-move">↑</button>
+                                    <button type="button" onClick={() => handleMoveField(index, 'down')} disabled={index === fields.length - 1} className="btn-move">↓</button>
+                                    <button type="button" onClick={() => handleRemoveField(index)} className="btn-danger btn-sm">Remove</button>
+                                </div>
+                            </div>
+
+                            {/* Field Properties */}
+                            <div className="field-properties-row">
+                                <div className="form-group-builder property-group">
+                                    <label className="form-label">Label:</label>
+                                    <input
+                                        type="text"
+                                        value={field.label}
+                                        onChange={(e) => handleFieldChange(index, 'label', e.target.value)}
+                                        className="form-input"
+                                    />
+                                </div>
+                                <div className="form-group-builder property-group">
+                                    <label className="form-label">Type:</label>
+                                    <select
+                                        value={field.field_type}
+                                        onChange={(e) => handleFieldChange(index, 'field_type', e.target.value as FormField['field_type'])}
+                                        className="form-select"
+                                    >
+                                        {['text', 'number', 'email', 'date', 'dropdown', 'file_upload', 'checkbox'].map(type => (
+                                            <option key={type} value={type}>{type}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="form-group-builder property-group is-required-check">
+                                    <label className="form-label">Required:</label>
+                                    <input
+                                        type="checkbox"
+                                        checked={field.is_required}
+                                        onChange={(e) => handleFieldChange(index, 'is_required', e.target.checked)}
+                                        className="form-checkbox"
+                                    />
+                                </div>
+                                <div className="form-group-builder property-group">
+                                    <label className="form-label">Field Name (Key):</label>
+                                    <input
+                                        type="text"
+                                        value={field.field_name}
+                                        onChange={(e) => handleFieldChange(index, 'field_name', e.target.value)}
+                                        className="form-input"
+                                        placeholder="client_name"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Field Configuration (Dropdown Options, etc.) */}
+                            {renderConfigEditor(field, index)}
+                        </div>
+                    ))}
+                </div>
+
+                <button type="button" onClick={handleAddField} className="btn-secondary btn-add-field">
+                    + Add New Field
                 </button>
-            </div>
-        </form>
+
+                <div style={{ marginTop: '25px', textAlign: 'center' }}>
+                    <button
+                        type="submit"
+                        className="btn-primary"
+                        disabled={isLoading}
+                    >
+                        {isLoading ? 'Saving...' : 'Save Form Template'}
+                    </button>
+                </div>
+            </form>
+        </AdminAppLayout>
+
     );
 };
 

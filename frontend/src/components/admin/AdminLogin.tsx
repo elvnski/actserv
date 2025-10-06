@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAdminAuth } from './context/AdminAuthContext.tsx';
 import { useNavigate } from 'react-router-dom';
-import './admin.css';
+import './admin.css'; // Your existing CSS file
 
 const AdminLogin: React.FC = () => {
     const [username, setUsername] = useState('');
@@ -23,91 +23,128 @@ const AdminLogin: React.FC = () => {
         }
     };
 
+    // Standard CSS for the gradient background
+    const heroBackgroundStyle = {
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px',
+        // Linear Gradient matching: #1f2937 (Slate 800) to #064e3b (Emerald 900)
+        background: 'linear-gradient(135deg, #1f2937 0%, #064e3b 100%)',
+    };
+
+    // Standard CSS for the login card
+    const cardStyle = {
+        width: '100%',
+        maxWidth: '400px',
+        padding: '32px', // p-8 equivalent
+        backgroundColor: 'white',
+        borderRadius: '12px', // rounded-xl equivalent
+        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', // shadow-2xl equivalent
+        border: '1px solid #f3f4f6', // border-gray-100 equivalent
+    };
+
+    // Standard CSS for the Emerald Button
+    const buttonStyle = {
+        width: '100%',
+        display: 'flex',
+        justifyContent: 'center',
+        padding: '12px',
+        fontSize: '16px',
+        fontWeight: '600',
+        borderRadius: '9999px', // rounded-full equivalent
+        color: 'white',
+        backgroundColor: '#059669', // Emerald-600 color code
+        border: 'none',
+        cursor: 'pointer',
+        transition: 'background-color 0.3s',
+    };
+
+    // Utility function for button hover (since inline styles don't handle pseudo-classes easily)
+    const handleMouseOver = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.currentTarget.style.backgroundColor = '#047857'; // Darker emerald-700
+    };
+    const handleMouseOut = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.currentTarget.style.backgroundColor = '#059669'; // Back to Emerald-600
+    };
+
+
     return (
-        // Outer container for full-page centering
-        <div style={{
-            minHeight: '100vh',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: '#f4f4f4',
-            padding: '20px' // Added to prevent edge-to-edge on small screens
-        }}>
-            {/* Login card with consistent padding and sizing */}
-            <div className="admin-container" style={{
-                width: '100%',
-                maxWidth: '400px', // Slightly wider for better form appearance
-                maxHeight: '600px', // Slightly wider for better form appearance
-                padding: '32px', // Consistent padding on all sides
-                borderRadius: '8px',
-                backgroundColor: 'transparent',
-                boxSizing: 'border-box'
-            }}>
-                <h1 className="admin-title" style={{
-                    textAlign: 'center',
-                    marginBottom: '16px',
-                    fontSize: '24px',
-                    fontWeight: '600'
-                }}>
+        <div style={heroBackgroundStyle}>
+
+            <div style={cardStyle}>
+
+                {/* Header Title */}
+                <h1 style={{ fontSize: '2rem', fontWeight: '800', textAlign: 'center', marginBottom: '1.5rem', color: '#1f2937' }}>
                     Admin Login
                 </h1>
-
-                <p style={{
-                    marginBottom: '24px',
-                    textAlign: 'center',
-                    color: '#666',
-                    fontSize: '14px'
-                }}>
-                    Log in with your Django Superuser credentials:
+                <p style={{ color: '#4b5563', textAlign: 'center', marginBottom: '1.5rem' }}>
+                    Use superuser credentials to access form configuration and submissions.
                 </p>
 
-                <form onSubmit={handleSubmit}>
-                    {/* Username Input */}
-                    <div className="form-group" style={{ marginBottom: '20px' }}>
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
+                    {/* Username Field */}
+                    <div>
+                        <label
+                            htmlFor="username"
+                            style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#374151', marginBottom: '0.25rem' }}
+                        >
+                            Username
+                        </label>
                         <input
+                            id="username"
                             type="text"
+                            placeholder="e.g., admin"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
-                            placeholder="Username (e.g., admin)"
-                            className="form-control"
+                            required
                             style={{
                                 width: '100%',
-                                padding: '12px',
-                                border: '1px solid #ccc',
-                                borderRadius: '4px',
-                                fontSize: '16px',
-                                boxSizing: 'border-box'
+                                padding: '10px',
+                                border: '1px solid #d1d5db',
+                                borderRadius: '8px',
+                                transition: 'border-color 0.15s'
                             }}
-                            required
                         />
                     </div>
 
-                    {/* Password Input */}
-                    <div className="form-group" style={{ marginBottom: '20px' }}>
+                    {/* Password Field */}
+                    <div>
+                        <label
+                            htmlFor="password"
+                            style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#374151', marginBottom: '0.25rem' }}
+                        >
+                            Password
+                        </label>
                         <input
+                            id="password"
                             type="password"
+                            placeholder="••••••••"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            placeholder="Password"
-                            className="form-control"
+                            required
                             style={{
                                 width: '100%',
-                                padding: '12px',
-                                border: '1px solid #ccc',
-                                borderRadius: '4px',
-                                fontSize: '16px',
-                                boxSizing: 'border-box'
+                                padding: '10px',
+                                border: '1px solid #d1d5db',
+                                borderRadius: '8px',
+                                transition: 'border-color 0.15s'
                             }}
-                            required
                         />
                     </div>
 
+                    {/* Error Message */}
                     {error && (
-                        <div className="alert-danger" style={{
-                            marginBottom: '20px',
-                            color: '#d32f2f',
+                        <div style={{
+                            backgroundColor: '#fee2e2', // Red-100
+                            border: '1px solid #f87171', // Red-400
+                            color: '#b91c1c', // Red-700
+                            padding: '12px 16px',
+                            borderRadius: '6px',
                             textAlign: 'center',
-                            fontSize: '14px'
+                            fontSize: '0.875rem'
                         }}>
                             Invalid Username or Password.
                         </div>
@@ -116,21 +153,9 @@ const AdminLogin: React.FC = () => {
                     {/* Login Button */}
                     <button
                         type="submit"
-                        className="btn-primary"
-                        style={{
-                            width: '100%', // Full width for consistency
-                            padding: '12px',
-                            fontSize: '16px',
-                            fontWeight: '600',
-                            backgroundColor: '#007bff',
-                            color: '#ffffff',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            transition: 'background-color 0.2s'
-                        }}
-                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#0056b3'}
-                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#007bff'}
+                        style={buttonStyle}
+                        onMouseOver={handleMouseOver}
+                        onMouseOut={handleMouseOut}
                     >
                         Log In
                     </button>
